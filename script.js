@@ -86,7 +86,7 @@ function soumettreLivre(event) {
     console.log("Nouveau livre prêt à être envoyé :", nouveauLivre);
 
     // Remplace ce faux lien par l'URL que tu viens de copier dans Apps Script !
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxv7Vv59HeTFWD0IY9GwVkznKTpa__4lE1x_tum-wkAF9BlCLp_nSE6JbYkPw54WpuSkw/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
 
     // On prépare le colis à envoyer
     const options = {
