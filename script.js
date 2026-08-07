@@ -63,10 +63,10 @@ function chargerLivres() {
                 const carteHtml = `
                     <div class="col">
                         <div class="card h-100 shadow-sm border-0">
-                        <!-- 🟢 On ajoute l'image ici en haut de la carte -->
-                            <img src="${couverture}" class="card-img-top" alt="Couverture" style="height: 220px; object-fit: cover; background-color: #f8f9fa;">
                             <div class="card-body d-flex flex-column justify-content-between">
                                 <div>
+                                <!-- 🟢 On ajoute l'image ici en haut de la carte -->
+                                    <img src="${couverture}" class="card-img-top" alt="Couverture" style="height: 220px; object-fit: cover; background-color: #f8f9fa;">
                                     <span class="badge bg-primary mb-2">${personne}</span>
                                     <h5 class="card-title fw-bold">${titre}</h5>
                                     <h6 class="card-subtitle mb-3 text-muted">${auteur}</h6>
