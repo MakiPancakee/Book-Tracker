@@ -68,18 +68,14 @@
     </div>
 
     <!-- Modal Fiche Détaillée (Pop-up) -->
-    <div id="modal-fiche"
-        class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75 cache"
-        style="z-index: 1050;">
+    <div id="modal-fiche" class="cache"
+        style="position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.75); z-index: 9999; display: flex; align-items: center; justify-content: center;">
 
-        <div class="card shadow-lg w-100 p-4 position-relative bg-white"
-            style="max-width: 700px; max-height: 90vh; overflow-y: auto; margin: 15px; border-radius: 12px;">
+        <div class="card shadow-lg p-4 bg-white position-relative"
+            style="max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; border-radius: 12px;">
 
-            <!-- Bouton pour fermer en haut à droite -->
             <button type="button" class="btn-close position-absolute top-0 end-0 m-3"
                 onclick="fermerFicheLivre()"></button>
-
-            <!-- Contenu de la fiche injecté par JavaScript -->
             <div id="fiche-details"></div>
         </div>
     </div>
