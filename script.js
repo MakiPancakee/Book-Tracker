@@ -331,14 +331,20 @@ function sauvegarderModification(event, index) {
 
     const numeroLigne = index + 2;
 
+    const nouveauTitre = document.getElementById("edit-titre").value;
+    const nouveauAuteur = document.getElementById("edit-auteur").value;
+    const nouveauStatut = document.getElementById("edit-statut").value;
+    const nouvelleNote = document.getElementById("edit-note").value;
+    const nouvelAvis = document.getElementById("edit-review").value;
+
     const livreModifie = {
         action: "UPDATE",
         ligne: numeroLigne,
-        titre: document.getElementById("edit-titre").value,
-        auteur: document.getElementById("edit-auteur").value,
-        statut: document.getElementById("edit-statut").value,
-        notes: document.getElementById("edit-note").value,
-        review: document.getElementById("edit-review").value
+        titre: nouveauTitre,
+        auteur: nouveauAuteur,
+        statut: nouveauStatut,
+        notes: nouvelleNote,
+        review: nouvelAvis
     };
 
     const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
@@ -351,9 +357,18 @@ function sauvegarderModification(event, index) {
         .then(reponse => reponse.json())
         .then(resultat => {
             if (resultat.statut === "succès") {
+                // Mise à jour immédiate en mémoire
+                if (tousLesLivres[index]) {
+                    tousLesLivres[index][6] = nouveauTitre;
+                    tousLesLivres[index][7] = nouveauAuteur;
+                    tousLesLivres[index][13] = nouveauStatut;
+                    tousLesLivres[index][14] = nouvelleNote;
+                    tousLesLivres[index][15] = nouvelAvis;
+                }
+
                 fermerFicheLivre();
-                filtreStatut = "TOUS"; // 🟢 Réinitialise la vue pour afficher le livre même s'il n'est plus dans la PAL
-                chargerLivres();
+                filtreStatut = "TOUS"; // Bascule la vue pour afficher le livre modifié
+                afficherLivres();
             } else {
                 alert("Erreur lors de la modification : " + resultat.message);
             }
