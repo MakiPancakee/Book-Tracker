@@ -1,13 +1,13 @@
-// On attend que la page HTML soit complètement chargée avant d'exécuter le code
+// Chargement de la page
 document.addEventListener("DOMContentLoaded", () => {
     verifierProfil();
 
-    // On écoute la soumission du formulaire d'ajout de livre
+    // Soumission du formulaire d'ajout de livre
     document.getElementById("form-livre").addEventListener("submit", soumettreLivre);
 });
 
 /* ========================================================
-   GESTION DU PROFIL (QUI EST CONNECTÉ ?)
+   GESTION DU PROFIL 
    ======================================================== */
 
 // Fonction qui vérifie si l'utilisateur est déjà venu sur le site
@@ -77,15 +77,15 @@ function soumettreLivre(event) {
     const nouveauLivre = {
         id: Date.now(), // Génère un identifiant unique basé sur la date et l'heure
         personne: personne, // Rempli automatiquement en arrière-plan !
-        titre: document.getElementById("titre").value,
-        auteur: document.getElementById("auteur").value,
-        statut: document.getElementById("statut").value,
+        titre: document.getElementById("Titre").value,
+        auteur: document.getElementById("Auteur").value,
+        statut: document.getElementById("Statut").value,
         // Tu ajouteras les autres champs ici quand tu auras mis à jour le HTML
     };
 
     console.log("Nouveau livre prêt à être envoyé :", nouveauLivre);
 
-    // TON URL GOOGLE APPS SCRIPT
+    // URL GOOGLE APPS SCRIPT
     const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
 
     // On prépare le colis à envoyer
@@ -103,7 +103,7 @@ function soumettreLivre(event) {
             
             if (resultat.statut === "succès") {
                 alert("Le livre \"" + nouveauLivre.titre + "\" a bien été ajouté au Google Sheet !");
-                fermerFormulaire(); // On ferme la fenêtre uniquement en cas de succès
+                fermerFormulaire(); // La fenêtre se ferme automatiquement après l'ajout
             } else {
                 alert("Erreur retournée par Google : " + resultat.message);
             }
