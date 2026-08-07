@@ -52,6 +52,7 @@ function chargerLivres() {
 
                 // Emplacements des colonnes dans ton Google Sheet :
                 const personne = ligne[1]; // Col B
+                const couverture = ligne[5]; // Col F
                 const titre = ligne[6];    // Col G
                 const auteur = ligne[7];   // Col H
                 const statut = ligne[13];  // Col N
