@@ -179,30 +179,37 @@ function ouvrirFicheLivre(index) {
     const livre = tousLesLivres[index];
     if (!livre) return;
 
-    // Récupération de l'ensemble des champs (sans ID ni Année)
-    const personne = livre[1];      // Col B
-    const date_debut = livre[2];    // Col C
-    const date_fin = livre[3];      // Col D
-    const duree = livre[4];         // Col E
-    const couverture = livre[5];    // Col F
-    const titre = livre[6];         // Col G
-    const auteur = livre[7];        // Col H
-    const pages = livre[8];         // Col I
-    const prix_officiel = livre[9]; // Col J
-    const prix_reel = livre[10];    // Col K
-    const format = livre[11];       // Col L
-    const genre = livre[12];        // Col M
-    const statut = livre[13];       // Col N
-    const notes = livre[14];        // Col O
-    const review = livre[15];       // Col P
+    // Récupération des colonnes B à P
+    const personne = livre[1];
+    const date_debut = livre[2];
+    const date_fin = livre[3];
+    const duree = livre[4];
+    const couverture = livre[5];
+    const titre = livre[6];
+    const auteur = livre[7];
+    const pages = livre[8];
+    const prix_officiel = livre[9];
+    const prix_reel = livre[10];
+    const format = livre[11];
+    const genre = livre[12];
+    const statut = livre[13];
+    const notes = livre[14];
+    const review = livre[15];
 
     const contenu = `
+        <!-- En-tête de la modale avec le titre et le bouton Modifier -->
+        <div class="d-flex justify-content-between align-items-center mb-3 pe-4">
+            <h3 class="mb-0 fw-bold">${titre || "Sans titre"}</h3>
+            <button type="button" class="btn btn-outline-primary btn-sm fw-bold ms-2" onclick="passerEnModeEdition(${index})">
+                ✏️ Modifier
+            </button>
+        </div>
+        <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
+        <hr>
+
         <div class="row g-4">
-            ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded" alt="Couverture"></div>` : ''}
+            ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm" alt="Couverture"></div>` : ''}
             <div class="${couverture ? 'col-md-8' : 'col-12'}">
-                <h3>${titre || "Sans titre"}</h3>
-                <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
-                <hr>
                 <p><strong>Appartient à :</strong> ${personne || "-"}</p>
                 <p><strong>Statut :</strong> ${statut || "-"}</p>
                 <p><strong>Genre :</strong> ${genre || "-"} | <strong>Format :</strong> ${format || "-"}</p>
@@ -221,4 +228,94 @@ function ouvrirFicheLivre(index) {
 
 function fermerFicheLivre() {
     document.getElementById("modal-fiche").classList.add("cache");
+}
+
+function passerEnModeEdition(index) {
+    const livre = tousLesLivres[index];
+    if (!livre) return;
+
+    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review] = livre;
+
+    const contenuEdit = `
+        <form id="form-edition" onsubmit="sauvegarderModification(event, ${index})">
+            <h4 class="mb-3">Modifier la fiche</h4>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Titre :</label>
+                <input type="text" id="edit-titre" class="form-control" value="${titre || ''}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Auteur :</label>
+                <input type="text" id="edit-auteur" class="form-control" value="${auteur || ''}" required>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Statut :</label>
+                    <select id="edit-statut" class="form-select">
+                        <option value="À lire" ${statut === 'À lire' ? 'selected' : ''}>À lire</option>
+                        <option value="En cours 📖" ${statut === 'En cours 📖' ? 'selected' : ''}>En cours 📖</option>
+                        <option value="Terminé ✔️" ${statut === 'Terminé ✔️' ? 'selected' : ''}>Terminé ✔️</option>
+                        <option value="Pause ⏸" ${statut === 'Pause ⏸' ? 'selected' : ''}>Pause ⏸</option>
+                        <option value="Abandonné ❌☠️" ${statut === 'Abandonné ❌☠️' ? 'selected' : ''}>Abandonné ❌☠️</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Note :</label>
+                    <input type="text" id="edit-note" class="form-control" value="${notes || ''}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Avis / Critique :</label>
+                <textarea id="edit-review" class="form-control" rows="3">${review || ''}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" onclick="ouvrirFicheLivre(${index})">Annuler</button>
+                <button type="submit" class="btn btn-success">💾 Enregistrer</button>
+            </div>
+        </form>
+    `;
+
+    document.getElementById("fiche-details").innerHTML = contenuEdit;
+}
+
+function sauvegarderModification(event, index) {
+    event.preventDefault();
+
+    // Calcul du numéro de ligne dans le Google Sheet (+2 car index 0 = ligne 2 du tableau)
+    const numeroLigne = index + 2;
+
+    const livreModifie = {
+        action: "UPDATE",
+        ligne: numeroLigne,
+        titre: document.getElementById("edit-titre").value,
+        auteur: document.getElementById("edit-auteur").value,
+        statut: document.getElementById("edit-statut").value,
+        notes: document.getElementById("edit-note").value,
+        review: document.getElementById("edit-review").value
+    };
+
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
+
+    fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(livreModifie)
+    })
+        .then(reponse => reponse.json())
+        .then(resultat => {
+            if (resultat.statut === "succès") {
+                fermerFicheLivre();
+                chargerLivres(); // Recharge les cartes mises à jour
+            } else {
+                alert("Erreur lors de la modification : " + resultat.message);
+            }
+        })
+        .catch(erreur => {
+            console.error("Erreur de sauvegarde :", erreur);
+            alert("Impossible de contacter le serveur Google.");
+        });
 }
