@@ -350,6 +350,7 @@ function sauvegarderModification(event, index) {
         .then(resultat => {
             if (resultat.statut === "succès") {
                 fermerFicheLivre();
+                filtreStatut = "TOUS"; // 🟢 Réinitialise la vue pour afficher le livre même s'il n'est plus dans la PAL
                 chargerLivres();
             } else {
                 alert("Erreur lors de la modification : " + resultat.message);
