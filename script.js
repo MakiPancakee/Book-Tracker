@@ -85,33 +85,31 @@ function soumettreLivre(event) {
 
     console.log("Nouveau livre prêt à être envoyé :", nouveauLivre);
 
-    // Remplace ce faux lien par l'URL que tu viens de copier dans Apps Script !
+    // TON URL GOOGLE APPS SCRIPT
     const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
 
     // On prépare le colis à envoyer
     const options = {
         method: "POST",
-        // 'text/plain' évite certains blocages de sécurité des navigateurs (CORS)
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(nouveauLivre) // On transforme notre objet en texte
+        body: JSON.stringify(nouveauLivre)
     };
 
-    // On envoie le colis au facteur (Google)
+    // On envoie le colis à Google Apps Script
     fetch(URL_APPS_SCRIPT, options)
         .then(reponse => reponse.json())
         .then(resultat => {
-            console.log("Succès :", resultat);
-            alert("Le livre " + nouveauLivre.titre + " a été ajouté au Google Sheet !");
-            fermerFormulaire(); // On ferme la fenêtre
+            console.log("Résultat reçu de Google :", resultat);
+            
+            if (resultat.statut === "succès") {
+                alert("Le livre \"" + nouveauLivre.titre + "\" a bien été ajouté au Google Sheet !");
+                fermerFormulaire(); // On ferme la fenêtre uniquement en cas de succès
+            } else {
+                alert("Erreur retournée par Google : " + resultat.message);
+            }
         })
         .catch(erreur => {
-            console.error("Erreur :", erreur);
-            alert("Oups, une erreur s'est produite...");
+            console.error("Erreur d'envoi :", erreur);
+            alert("Oups, impossible de contacter le serveur Google.");
         });
-    // fetch('TON_URL_APPS_SCRIPT_SECRETE', { ... })
-
-    // On ferme le formulaire une fois terminé
-    fermerFormulaire();
-    alert("Le livre " + nouveauLivre.titre + " est prêt à être envoyé !");
 }
-
