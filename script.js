@@ -28,6 +28,61 @@ function verifierProfil() {
         document.getElementById("ecran-profil").classList.remove("cache");
         document.getElementById("application-principale").classList.add("cache");
     }
+
+    function chargerLivres() {
+        const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
+
+        fetch(URL_APPS_SCRIPT)
+            .then(reponse => reponse.json())
+            .then(lignes => {
+                const grille = document.getElementById("grille-livres");
+                grille.innerHTML = ""; // On vide la grille avant de recharger
+
+                // i = 1 pour sauter la ligne d'en-tête du tableau
+                for (let i = 1; i < lignes.length; i++) {
+                    const ligne = lignes[i];
+
+                    // Index ajustés par rapport à appendRow :
+                    const personne = ligne[1]; // Col B
+                    const date_debut = ligne[2]; // Col C
+                    const date_fin = ligne[3];   // Col D
+                    const duree = ligne[4];      // Col E
+                    const couverture = ligne[5];  // Col F
+                    const titre = ligne[6];    // Col G
+                    const auteur = ligne[7];   // Col H
+                    const pages = ligne[8];    // Col I
+                    const prix_officiel = ligne[9]; // Col J
+                    const prix_reel = ligne[10]; // Col K
+                    const format = ligne[11]; // Col L
+                    const genre = ligne[12]; // Col M
+                    const statut = ligne[13];  // Col N
+                    const notes = ligne[14];   // Col O
+                    const review = ligne[15];  // Col P
+
+                    // Si pas de titre sur la ligne, on passe
+                    if (!titre) continue;
+
+                    const carteHtml = `
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="badge bg-primary mb-2">${personne}</span>
+                                    <h5 class="card-title fw-bold">${titre}</h5>
+                                    <h6 class="card-subtitle mb-3 text-muted">${auteur}</h6>
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark border">${statut}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                    grille.innerHTML += carteHtml;
+                }
+            })
+            .catch(erreur => console.error("Erreur lors du chargement des livres :", erreur));
+    }
 }
 
 // Fonction appelée quand on clique sur "Moi" ou "Mon Amie" au début
@@ -100,7 +155,7 @@ function soumettreLivre(event) {
         .then(reponse => reponse.json())
         .then(resultat => {
             console.log("Résultat reçu de Google :", resultat);
-            
+
             if (resultat.statut === "succès") {
                 alert("Le livre \"" + nouveauLivre.titre + "\" a bien été ajouté au Google Sheet !");
                 fermerFormulaire(); // La fenêtre se ferme automatiquement après l'ajout
@@ -113,3 +168,4 @@ function soumettreLivre(event) {
             alert("Oups, impossible de contacter le serveur Google.");
         });
 }
+
