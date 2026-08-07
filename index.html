@@ -42,6 +42,8 @@
                     <button class="btn btn-outline-dark" onclick="changerVue('Matide')">Bibliothèque Matide</button>
                     <button class="btn btn-outline-dark" onclick="changerVue('Flaure')">Bibliothèque Flaure</button>
                     <button class="btn btn-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
+                    <!-- Bouton Pile à lire -->
+                    <button onclick="changerVue('PAL')">Pile à lire (PAL)</button>
                 </nav>
             </div>
         </header>
@@ -65,6 +67,16 @@
         </main>
     </div>
 
+    <!-- Modal Fiche Détaillée -->
+    <div id="modal-fiche" class="modal-arriere-plan cache">
+        <div class="modal-contenu p-4 style=" max-width: 700px; margin: auto; background: white; border-radius: 8px;
+            position: relative;">
+            <button type="button" class="btn-close" style="position: absolute; top: 15px; right: 15px;"
+                onclick="fermerFicheLivre()"></button>
+            <div id="fiche-details"></div>
+        </div>
+    </div>
+
     <!-- ÉCRAN 3 : LE FORMULAIRE D'AJOUT (Fenêtre modale) -->
     <div id="modal-formulaire"
         class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75 cache"
@@ -77,8 +89,7 @@
                 <form id="form-livre">
                     <div class="mb-3">
                         <label for="titre" class="form-label fw-bold">Titre du livre :</label>
-                        <input type="text" id="titre" class="form-control" placeholder="ex: Fourth Wing"
-                            required>
+                        <input type="text" id="titre" class="form-control" placeholder="ex: Fourth Wing" required>
                     </div>
 
                     <div class="mb-3">
