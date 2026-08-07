@@ -1,8 +1,6 @@
 // Chargement de la page
 document.addEventListener("DOMContentLoaded", () => {
     verifierProfil();
-
-    // Soumission du formulaire d'ajout de livre
     document.getElementById("form-livre").addEventListener("submit", soumettreLivre);
 });
 
@@ -10,7 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
    GESTION DU PROFIL 
    ======================================================== */
 
-// Fonction qui vérifie si l'utilisateur est déjà venu sur le site
 function verifierProfil() {
     const utilisateurEnregistre = localStorage.getItem("utilisateurActif");
 
@@ -18,8 +15,6 @@ function verifierProfil() {
         document.getElementById("ecran-profil").classList.add("cache");
         document.getElementById("application-principale").classList.remove("cache");
         document.getElementById("message-bienvenue").innerText = "Connectée en tant que : " + utilisateurEnregistre;
-
-        // Appel de la fonction de chargement des livres
         chargerLivres();
     } else {
         document.getElementById("ecran-profil").classList.remove("cache");
@@ -27,7 +22,6 @@ function verifierProfil() {
     }
 }
 
-// Fonction appelée quand on clique sur "Moi" ou "Mon Amie" au début
 function choisirProfil(nom) {
     localStorage.setItem("utilisateurActif", nom);
     verifierProfil();
@@ -36,9 +30,9 @@ function choisirProfil(nom) {
 /* ========================================================
    VARIABLES GLOBALES ET FILTRES
    ======================================================== */
-let tousLesLivres = []; // Stocke la liste complète reçue de Google
-let filtrePersonne = "Commune"; // "Flaure", "Matide" ou "Commune"
-let filtreStatut = "TOUS"; // "TOUS" ou "À lire"
+let tousLesLivres = [];
+let filtrePersonne = "Commune";
+let filtreStatut = "TOUS";
 
 /* ========================================================
    CHARGEMENT ET AFFICHAGE DES LIVRES
@@ -50,33 +44,29 @@ function chargerLivres() {
     fetch(URL_APPS_SCRIPT)
         .then(reponse => reponse.json())
         .then(lignes => {
-            // On sauvegarde tous les livres (en retirant la ligne d'en-tête 0)
             tousLesLivres = lignes.slice(1);
             afficherLivres();
         })
         .catch(erreur => console.error("Erreur lors du chargement des livres :", erreur));
 }
 
-// Fonction qui applique les filtres et dessine les cartes
 function afficherLivres() {
     const grille = document.getElementById("grille-livres");
     grille.innerHTML = "";
 
     tousLesLivres.forEach((ligne, index) => {
-        const personne = ligne[1];     // Col B
-        const couverture = ligne[5];   // Col F
-        const titre = ligne[6];        // Col G
-        const auteur = ligne[7];       // Col H
-        const statut = ligne[13];      // Col N
+        const personne = ligne[1];
+        const couverture = ligne[5];
+        const titre = ligne[6];
+        const auteur = ligne[7];
+        const statut = ligne[13];
 
         if (!titre) return;
 
-        // Filtre 1 : Personne (Flaure / Matide / Commune)
         if (filtrePersonne !== "Commune" && personne !== filtrePersonne) {
             return;
         }
 
-        // 🟢 Filtre 2 : Pile à lire (Corrigé avec "À lire")
         if (filtreStatut === "À lire" && statut !== "À lire") {
             return;
         }
@@ -103,30 +93,74 @@ function afficherLivres() {
 }
 
 /* ========================================================
-   GESTION DE L'INTERFACE (VUES ET FORMULAIRE)
+   GESTION DE L'INTERFACE
    ======================================================== */
 
-// Fonction pour changer d'onglet
 function changerVue(vueDemandee) {
     if (vueDemandee === "PAL") {
-        // 🟢 Alterne entre afficher uniquement "À lire" et tout afficher
         filtreStatut = (filtreStatut === "À lire") ? "TOUS" : "À lire";
     } else {
-        // Adapte les clics ("Flaure", "Matide", "Commune")
         filtrePersonne = vueDemandee;
     }
     afficherLivres();
 }
 
-// Fonction pour afficher la fenêtre d'ajout de livre
 function ouvrirFormulaire() {
     document.getElementById("modal-formulaire").classList.remove("cache");
 }
 
-// Fonction pour cacher la fenêtre d'ajout de livre
 function fermerFormulaire() {
     document.getElementById("modal-formulaire").classList.add("cache");
     document.getElementById("form-livre").reset();
+
+    // Remet les étoiles à zéro
+    document.getElementById("nouveau-note").value = "0";
+    const etoiles = document.querySelectorAll('#star-rating-creation span');
+    etoiles.forEach(etoile => {
+        etoile.classList.remove('text-warning');
+        etoile.classList.add('text-muted');
+    });
+}
+
+/* ========================================================
+   GESTION DES ÉTOILES DE NOTATION
+   ======================================================== */
+
+function genererEtoiles(note) {
+    const nb = parseInt(note) || 0;
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        html += `<span class="${i <= nb ? 'text-warning' : 'text-muted'} fs-5">★</span>`;
+    }
+    return html;
+}
+
+function selectionnerEtoileCreation(valeur) {
+    document.getElementById('nouveau-note').value = valeur;
+    const etoiles = document.querySelectorAll('#star-rating-creation span');
+    etoiles.forEach((etoile, index) => {
+        if (index < valeur) {
+            etoile.classList.remove('text-muted');
+            etoile.classList.add('text-warning');
+        } else {
+            etoile.classList.remove('text-warning');
+            etoile.classList.add('text-muted');
+        }
+    });
+}
+
+function selectionnerEtoile(valeur) {
+    document.getElementById('edit-note').value = valeur;
+    const etoiles = document.querySelectorAll('#star-rating span');
+    etoiles.forEach((etoile, index) => {
+        if (index < valeur) {
+            etoile.classList.remove('text-muted');
+            etoile.classList.add('text-warning');
+        } else {
+            etoile.classList.remove('text-warning');
+            etoile.classList.add('text-muted');
+        }
+    });
 }
 
 /* ========================================================
@@ -144,6 +178,7 @@ function soumettreLivre(event) {
         titre: document.getElementById("titre").value,
         auteur: document.getElementById("auteur").value,
         statut: document.getElementById("statut").value,
+        note: document.getElementById("nouveau-note").value
     };
 
     const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
@@ -160,7 +195,7 @@ function soumettreLivre(event) {
             if (resultat.statut === "succès") {
                 alert("Le livre \"" + nouveauLivre.titre + "\" a bien été ajouté !");
                 fermerFormulaire();
-                chargerLivres(); // Recharges automatiquement les cartes sans rafraîchir la page !
+                chargerLivres();
             } else {
                 alert("Erreur retournée par Google : " + resultat.message);
             }
@@ -172,14 +207,13 @@ function soumettreLivre(event) {
 }
 
 /* ========================================================
-   CODE 3 : FICHE COMPLÈTE DU LIVRE
+   FICHE COMPLÈTE ET ÉDITION
    ======================================================== */
 
 function ouvrirFicheLivre(index) {
     const livre = tousLesLivres[index];
     if (!livre) return;
 
-    // Récupération des colonnes B à P
     const personne = livre[1];
     const date_debut = livre[2];
     const date_fin = livre[3];
@@ -197,7 +231,6 @@ function ouvrirFicheLivre(index) {
     const review = livre[15];
 
     const contenu = `
-        <!-- En-tête de la modale avec le titre et le bouton Modifier -->
         <div class="d-flex justify-content-between align-items-center mb-3 pe-4">
             <h3 class="mb-0 fw-bold">${titre || "Sans titre"}</h3>
             <button type="button" class="btn btn-outline-primary btn-sm fw-bold ms-2" onclick="passerEnModeEdition(${index})">
@@ -216,7 +249,7 @@ function ouvrirFicheLivre(index) {
                 <p><strong>Nombre de pages :</strong> ${pages || "-"}</p>
                 <p><strong>Période de lecture :</strong> Du ${date_debut || "?"} au ${date_fin || "?"} (${duree || "-"})</p>
                 <p><strong>Prix payé :</strong> ${prix_reel || "-"} € (Prix officiel : ${prix_officiel || "-"} €)</p>
-                <p><strong>Note :</strong> ${notes || "-"}</p>
+                <p class="d-flex align-items-center gap-2"><strong>Note :</strong> ${notes ? genererEtoiles(notes) + ` <span class="text-muted">(${notes}/5)</span>` : "-"}</p>
                 <p><strong>Avis :</strong> ${review || "Aucun avis pour le moment."}</p>
             </div>
         </div>
@@ -235,6 +268,7 @@ function passerEnModeEdition(index) {
     if (!livre) return;
 
     const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review] = livre;
+    const noteActuelle = parseInt(notes) || 0;
 
     const contenuEdit = `
         <form id="form-edition" onsubmit="sauvegarderModification(event, ${index})">
@@ -261,9 +295,17 @@ function passerEnModeEdition(index) {
                         <option value="Abandonné ❌☠️" ${statut === 'Abandonné ❌☠️' ? 'selected' : ''}>Abandonné ❌☠️</option>
                     </select>
                 </div>
+
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">Note :</label>
-                    <input type="text" id="edit-note" class="form-control" value="${notes || ''}">
+                    <div id="star-rating" class="fs-3" style="cursor: pointer; user-select: none;">
+                        <span onclick="selectionnerEtoile(1)" class="${noteActuelle >= 1 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(2)" class="${noteActuelle >= 2 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(3)" class="${noteActuelle >= 3 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(4)" class="${noteActuelle >= 4 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(5)" class="${noteActuelle >= 5 ? 'text-warning' : 'text-muted'}">★</span>
+                    </div>
+                    <input type="hidden" id="edit-note" value="${noteActuelle}">
                 </div>
             </div>
 
@@ -285,7 +327,6 @@ function passerEnModeEdition(index) {
 function sauvegarderModification(event, index) {
     event.preventDefault();
 
-    // Calcul du numéro de ligne dans le Google Sheet (+2 car index 0 = ligne 2 du tableau)
     const numeroLigne = index + 2;
 
     const livreModifie = {
@@ -309,7 +350,7 @@ function sauvegarderModification(event, index) {
         .then(resultat => {
             if (resultat.statut === "succès") {
                 fermerFicheLivre();
-                chargerLivres(); // Recharge les cartes mises à jour
+                chargerLivres();
             } else {
                 alert("Erreur lors de la modification : " + resultat.message);
             }

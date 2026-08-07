@@ -11,7 +11,7 @@
 
 <body class="bg-light">
 
-    <!-- ÉCRAN 1 : CHOIX DU PROFIL (Visible uniquement la première fois) -->
+    <!-- ÉCRAN 1 : CHOIX DU PROFIL -->
     <div id="ecran-profil"
         class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75"
         style="z-index: 1050;">
@@ -29,10 +29,10 @@
         </div>
     </div>
 
-    <!-- ÉCRAN 2 : L'APPLICATION PRINCIPALE (Cachée par défaut) -->
+    <!-- ÉCRAN 2 : L'APPLICATION PRINCIPALE -->
     <div id="application-principale" class="cache">
 
-        <!-- L'en-tête avec les menus -->
+        <!-- En-tête -->
         <header class="bg-white border-bottom shadow-sm py-4 mb-4">
             <div class="container text-center">
                 <h1 class="fw-bold mb-2">📚 Le Cercle des Cerveaux Disparus</h1>
@@ -42,7 +42,6 @@
                     <button class="btn btn-outline-dark" onclick="changerVue('Mathilde')">Bibliothèque Matide</button>
                     <button class="btn btn-outline-dark" onclick="changerVue('Flore')">Bibliothèque Flaure</button>
                     <button class="btn btn-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
-                    <!-- Bouton Pile à lire -->
                     <button class="btn btn-outline-success" onclick="changerVue('PAL')">Pile à lire (PAL)</button>
                 </nav>
             </div>
@@ -50,7 +49,6 @@
 
         <!-- Contenu principal -->
         <main class="container my-4">
-            <!-- Bouton pour ajouter un livre -->
             <div class="row justify-content-center mb-4">
                 <div class="col-md-8 col-lg-6">
                     <button id="btn-ajouter-livre" class="btn btn-success btn-lg w-100 shadow-sm fw-bold"
@@ -60,14 +58,13 @@
                 </div>
             </div>
 
-            <!-- Grille responsive des livres -->
             <section id="grille-livres" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                <!-- Les livres affichés par JavaScript s'inséreront ici -->
+                <!-- Les cartes s'insèrent ici -->
             </section>
         </main>
     </div>
 
-    <!-- ÉCRAN 3 : LE FORMULAIRE D'AJOUT (Fenêtre modale) -->
+    <!-- ÉCRAN 3 : FORMULAIRE D'AJOUT -->
     <div id="modal-formulaire"
         class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75 cache"
         style="z-index: 1050;">
@@ -98,7 +95,18 @@
                         </select>
                     </div>
 
-                    <!-- Tes futurs champs viendront s'insérer ici -->
+                    <!-- Sélecteur de note par étoiles -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Note :</label>
+                        <div id="star-rating-creation" class="fs-3" style="cursor: pointer; user-select: none;">
+                            <span onclick="selectionnerEtoileCreation(1)" class="text-muted">★</span>
+                            <span onclick="selectionnerEtoileCreation(2)" class="text-muted">★</span>
+                            <span onclick="selectionnerEtoileCreation(3)" class="text-muted">★</span>
+                            <span onclick="selectionnerEtoileCreation(4)" class="text-muted">★</span>
+                            <span onclick="selectionnerEtoileCreation(5)" class="text-muted">★</span>
+                        </div>
+                        <input type="hidden" id="nouveau-note" value="0">
+                    </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <button type="button" class="btn btn-secondary" onclick="fermerFormulaire()">Annuler</button>
@@ -109,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Modal Fiche Détaillée (Pop-up) celle lorsqu'on clique sur une carte -->
+    <!-- POP-UP : FICHE DÉTAILLÉE DU LIVRE -->
     <div id="modal-fiche" class="cache"
         style="position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.75); z-index: 9999; display: flex; align-items: center; justify-content: center;">
 
@@ -122,7 +130,6 @@
         </div>
     </div>
 
-    <!-- Scripts JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
