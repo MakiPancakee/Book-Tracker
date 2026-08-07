@@ -85,10 +85,33 @@ function soumettreLivre(event) {
 
     console.log("Nouveau livre prêt à être envoyé :", nouveauLivre);
 
-    // 3. ICI VIENDRA LE CODE POUR ENVOYER À GOOGLE SHEETS
+    // Remplace ce faux lien par l'URL que tu viens de copier dans Apps Script !
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxv7Vv59HeTFWD0IY9GwVkznKTpa__4lE1x_tum-wkAF9BlCLp_nSE6JbYkPw54WpuSkw/exec";
+
+    // On prépare le colis à envoyer
+    const options = {
+        method: "POST",
+        // 'text/plain' évite certains blocages de sécurité des navigateurs (CORS)
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(nouveauLivre) // On transforme notre objet en texte
+    };
+
+    // On envoie le colis au facteur (Google)
+    fetch(URL_APPS_SCRIPT, options)
+        .then(reponse => reponse.json())
+        .then(resultat => {
+            console.log("Succès :", resultat);
+            alert("Le livre " + nouveauLivre.titre + " a été ajouté au Google Sheet !");
+            fermerFormulaire(); // On ferme la fenêtre
+        })
+        .catch(erreur => {
+            console.error("Erreur :", erreur);
+            alert("Oups, une erreur s'est produite...");
+        });
     // fetch('TON_URL_APPS_SCRIPT_SECRETE', { ... })
 
     // On ferme le formulaire une fois terminé
     fermerFormulaire();
     alert("Le livre " + nouveauLivre.titre + " est prêt à être envoyé !");
 }
+
