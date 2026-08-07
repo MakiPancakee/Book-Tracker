@@ -77,9 +77,9 @@ function soumettreLivre(event) {
     const nouveauLivre = {
         id: Date.now(), // Génère un identifiant unique basé sur la date et l'heure
         personne: personne, // Rempli automatiquement en arrière-plan !
-        titre: document.getElementById("Titre").value,
-        auteur: document.getElementById("Auteur").value,
-        statut: document.getElementById("Statut").value,
+        titre: document.getElementById("titre").value,
+        auteur: document.getElementById("auteur").value,
+        statut: document.getElementById("statut").value,
         // Tu ajouteras les autres champs ici quand tu auras mis à jour le HTML
     };
 
