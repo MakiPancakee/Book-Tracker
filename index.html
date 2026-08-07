@@ -20,10 +20,8 @@
                 <h2 class="card-title mb-3">Qui es-tu ?</h2>
                 <p class="card-text text-muted mb-4">Choisis ton profil pour accéder à la bibliothèque.</p>
                 <div class="d-grid gap-3">
-                    <button class="btn btn-outline-danger btn-lg fw-bold" onclick="choisirProfil('Matide')">😈 Matide
-                        😈</button>
-                    <button class="btn btn-outline-primary btn-lg fw-bold" onclick="choisirProfil('Flaure')">😻 Flaure
-                        😻</button>
+                    <button class="btn btn-outline-danger btn-lg fw-bold" onclick="choisirProfil('Matide')">😈 Matide 😈</button>
+                    <button class="btn btn-outline-primary btn-lg fw-bold" onclick="choisirProfil('Flaure')">😻 Flaure 😻</button>
                 </div>
             </div>
         </div>
@@ -43,7 +41,7 @@
                     <button class="btn btn-outline-dark" onclick="changerVue('Flaure')">Bibliothèque Flaure</button>
                     <button class="btn btn-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
                     <!-- Bouton Pile à lire -->
-                    <button onclick="changerVue('PAL')">Pile à lire (PAL)</button>
+                    <button class="btn btn-outline-success" onclick="changerVue('PAL')">Pile à lire (PAL)</button>
                 </nav>
             </div>
         </header>
@@ -69,8 +67,8 @@
 
     <!-- Modal Fiche Détaillée -->
     <div id="modal-fiche" class="modal-arriere-plan cache">
-        <div class="modal-contenu p-4 style=" max-width: 700px; margin: auto; background: white; border-radius: 8px;
-            position: relative;">
+        <!-- 🟢 L'erreur de guillemet était sur la ligne ci-dessous ! -->
+        <div class="modal-contenu p-4" style="max-width: 700px; margin: auto; background: white; border-radius: 8px; position: relative;">
             <button type="button" class="btn-close" style="position: absolute; top: 15px; right: 15px;"
                 onclick="fermerFicheLivre()"></button>
             <div id="fiche-details"></div>

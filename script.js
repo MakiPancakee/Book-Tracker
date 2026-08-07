@@ -19,7 +19,7 @@ function verifierProfil() {
         document.getElementById("application-principale").classList.remove("cache");
         document.getElementById("message-bienvenue").innerText = "Connectée en tant que : " + utilisateurEnregistre;
 
-        // 🟢 Appel de la fonction de chargement des livres
+        // Appel de la fonction de chargement des livres
         chargerLivres();
     } else {
         document.getElementById("ecran-profil").classList.remove("cache");
@@ -37,8 +37,8 @@ function choisirProfil(nom) {
    VARIABLES GLOBALES ET FILTRES
    ======================================================== */
 let tousLesLivres = []; // Stocke la liste complète reçue de Google
-let filtrePersonne = "Commune"; // "Flore", "Mathilde" ou "Commune"
-let filtreStatut = "TOUS"; // "TOUS" ou "A lire"
+let filtrePersonne = "Commune"; // "Flaure", "Matide" ou "Commune"
+let filtreStatut = "TOUS"; // "TOUS" ou "À lire"
 
 /* ========================================================
    CHARGEMENT ET AFFICHAGE DES LIVRES
@@ -71,13 +71,13 @@ function afficherLivres() {
 
         if (!titre) return;
 
-        // Filtre 1 : Personne (Flore / Mathilde / Commune)
+        // Filtre 1 : Personne (Flaure / Matide / Commune)
         if (filtrePersonne !== "Commune" && personne !== filtrePersonne) {
             return;
         }
 
-        // Filtre 2 : Pile à lire ("A lire")
-        if (filtreStatut === "A lire" && statut !== "A lire") {
+        // 🟢 Filtre 2 : Pile à lire (Corrigé avec "À lire")
+        if (filtreStatut === "À lire" && statut !== "À lire") {
             return;
         }
 
@@ -106,13 +106,13 @@ function afficherLivres() {
    GESTION DE L'INTERFACE (VUES ET FORMULAIRE)
    ======================================================== */
 
-// Fonction pour changer d'onglet (Ma bibliothèque, Sa bibliothèque, Commune)
+// Fonction pour changer d'onglet
 function changerVue(vueDemandee) {
     if (vueDemandee === "PAL") {
-        // Alterne entre afficher uniquement "A lire" et tout afficher
-        filtreStatut = (filtreStatut === "A lire") ? "TOUS" : "A lire";
+        // 🟢 Alterne entre afficher uniquement "À lire" et tout afficher
+        filtreStatut = (filtreStatut === "À lire") ? "TOUS" : "À lire";
     } else {
-        // Adapte les clics ("Flore", "Mathilde", "Commune")
+        // Adapte les clics ("Flaure", "Matide", "Commune")
         filtrePersonne = vueDemandee;
     }
     afficherLivres();
