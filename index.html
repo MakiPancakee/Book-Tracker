@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notre Book Tracker</title>
+    <!-- On relie le fichier CSS pour le design -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ÉCRAN 1 : CHOIX DU PROFIL (Visible uniquement la première fois) -->
+    <div id="ecran-profil" class="ecran-plein-ecran">
+        <div class="boite-profil">
+            <h2>Qui es-tu ?</h2>
+            <p>Choisis ton profil pour accéder à la bibliothèque.</p>
+            <div class="boutons-profil">
+                <!-- Change "Moi" et "Amie" par vos vrais prénoms dans les parenthèses de la fonction -->
+                <button onclick="choisirProfil('Moi')">Moi</button>
+                <button onclick="choisirProfil('Amie')">Mon Amie</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 2 : L'APPLICATION PRINCIPALE (Cachée par défaut) -->
+    <div id="application-principale" class="cache">
+
+        <!-- L'en-tête avec les menus -->
+        <header>
+            <h1>📚 Book Tracker</h1>
+            <p id="message-bienvenue"></p>
+            <nav>
+                <button onclick="changerVue('Moi')">Ma Bibliothèque</button>
+                <button onclick="changerVue('Amie')">Sa Bibliothèque</button>
+                <button onclick="changerVue('Commune')">Bibliothèque Commune</button>
+            </nav>
+        </header>
+
+        <!-- Le bouton pour ajouter un livre -->
+        <main>
+            <button id="btn-ajouter-livre" onclick="ouvrirFormulaire()">+ Ajouter un livre</button>
+
+            <!-- C'est ici que le JavaScript affichera les livres -->
+            <section id="grille-livres" class="grille-livres">
+                <!-- Les livres apparaîtront ici -->
+            </section>
+        </main>
+    </div>
+
+    <!-- LE FORMULAIRE D'AJOUT (Caché par défaut) -->
+    <div id="modal-formulaire" class="ecran-plein-ecran cache">
+        <div class="boite-formulaire">
+            <h2>Ajouter une lecture</h2>
+            <form id="form-livre">
+                <label for="titre">Titre du livre :</label>
+                <input type="text" id="titre" required>
+
+                <label for="auteur">Auteur :</label>
+                <input type="text" id="auteur" required>
+
+                <label for="statut">Statut :</label>
+                <select id="statut">
+                    <option value="À lire">À lire</option>
+                    <option value="En cours">En cours</option>
+                    <option value="Lu">Lu</option>
+                </select>
+
+                <!-- TU POURRAS AJOUTER TES AUTRES CHAMPS ICI (Format, Prix, etc.) -->
+
+                <div class="boutons-formulaire">
+                    <button type="button" onclick="fermerFormulaire()">Annuler</button>
+                    <button type="submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- On relie le fichier JavaScript pour la logique -->
+    <script src="script.js"></script>
+</body>
+
+</html>
