@@ -67,7 +67,8 @@ function afficherLivres() {
             return;
         }
 
-        if (filtreStatut === "À lire" && statut !== "À lire") {
+        // Filtre Pile à lire
+        if (filtreStatut === "À lire" && !statut.includes("À lire")) {
             return;
         }
 
@@ -269,6 +270,7 @@ function passerEnModeEdition(index) {
 
     const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review] = livre;
     const noteActuelle = parseInt(notes) || 0;
+    const statutActuel = statut || "";
 
     const contenuEdit = `
         <form id="form-edition" onsubmit="sauvegarderModification(event, ${index})">
@@ -288,11 +290,11 @@ function passerEnModeEdition(index) {
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">Statut :</label>
                     <select id="edit-statut" class="form-select">
-                        <option value="À lire" ${statut === 'À lire' ? 'selected' : ''}>À lire</option>
-                        <option value="En cours 📖" ${statut === 'En cours 📖' ? 'selected' : ''}>En cours 📖</option>
-                        <option value="Terminé ✔️" ${statut === 'Terminé ✔️' ? 'selected' : ''}>Terminé ✔️</option>
-                        <option value="Pause ⏸" ${statut === 'Pause ⏸' ? 'selected' : ''}>Pause ⏸</option>
-                        <option value="Abandonné ❌☠️" ${statut === 'Abandonné ❌☠️' ? 'selected' : ''}>Abandonné ❌☠️</option>
+                        <option value="À lire" ${statutActuel.includes('À lire') ? 'selected' : ''}>À lire 📚</option>
+                        <option value="En cours" ${statutActuel.includes('En cours') ? 'selected' : ''}>En cours 📖</option>
+                        <option value="Pause" ${statutActuel.includes('Pause') ? 'selected' : ''}>Pause ⏸</option>
+                        <option value="Terminé" ${statutActuel.includes('Terminé') ? 'selected' : ''}>Terminé ✔️</option>
+                        <option value="Abandonné" ${statutActuel.includes('Abandonné') ? 'selected' : ''}>Abandonné ❌☠️</option>
                     </select>
                 </div>
 
