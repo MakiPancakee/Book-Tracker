@@ -204,7 +204,7 @@ function soumettreLivre(event) {
         body: JSON.stringify(nouveauLivre)
     };
 
-c    fetch(URL_APPS_SCRIPT, options)
+    fetch(URL_APPS_SCRIPT, options)
         .then(reponse => reponse.json())
         .then(resultat => {
             if (resultat.statut === "succès") {
