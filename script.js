@@ -11,16 +11,6 @@ function nettoyerPrix(valeur) {
     return prixPropre;
 }
 
-// Fonction pour retirer le tag d'année (ex: 2024, 2025) de la colonne Q
-function nettoyerTagsSansAnnee(tagsStr) {
-    if (!tagsStr) return "";
-    return String(tagsStr)
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => !/^\d{4}$/.test(t) && t !== "")
-        .join(', ');
-}
-
 /* ========================================================
    VARIABLES GLOBALES ET INITIALISATION
    ======================================================== */
@@ -198,10 +188,7 @@ function obtenirLivresFiltres() {
         const matchStatut = (filtreStatut === "TOUS") ? true : statut.includes(filtreStatut);
         const matchCoeur = !vueCoupDeCoeur ? true : estCoupDeCoeur;
 
-        // Filtre par année dans les tags (colonne Q) ou dans la date de fin
         const matchAnnee = (filtreAnnee === "TOUS") ? true : (tagsStr.includes(filtreAnnee) || (l[3] && l[3].includes(filtreAnnee)));
-        
-        // Filtre par genre
         const matchGenre = (filtreGenre === "TOUS") ? true : genreStr.toLowerCase().includes(filtreGenre.toLowerCase());
 
         return matchPersonne && matchStatut && matchCoeur && matchAnnee && matchGenre;
@@ -627,6 +614,7 @@ function ouvrirFicheLivre(index) {
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-outline-primary btn-sm fw-bold" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>
+                <button type="button" class="btn-close fs-5" onclick="fermerFicheLivre()" aria-label="Fermer"></button>
             </div>
         </div>
         <h5 class="text-muted mb-3">${auteurLivre}</h5>
@@ -671,11 +659,16 @@ function passerEnModeEdition(index) {
     const noteActuelle = parseInt(notes) || 0;
     const spiceActuel = parseInt(spicy) || 0;
     const estCoupDeCoeur = (coup_de_coeur === "VRAI" || coup_de_coeur === true);
-    const tagsPropres = nettoyerTagsSansAnnee(tags);
 
     const contenuEdit = `
         <form onsubmit="sauvegarderModification(event, ${index})">
-            <h4 class="mb-3">Modifier la fiche complète</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Modifier mon exemplaire</h4>
+                <button type="button" class="btn-close fs-5" onclick="ouvrirFicheLivre(${index})" aria-label="Fermer"></button>
+            </div>
+            <div class="alert alert-light border mb-3 small">
+                👤 <strong>Lecture de :</strong> ${personne || 'Moi'} | 📖 <strong>Format actuel :</strong> ${format || 'Standard'}
+            </div>
             
             <div class="row">
                 <div class="col-md-6 mb-2"><label class="fw-bold">Titre :</label><input type="text" id="edit-titre" class="form-control" value="${titre || ''}" required></div>
@@ -691,15 +684,21 @@ function passerEnModeEdition(index) {
             </div>
 
             <div class="row">
-                <div class="col-md-3 mb-2"><label class="fw-bold">Pages :</label><input type="number" id="edit-pages" class="form-control" value="${pages || ''}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Officiel (€) :</label><input type="text" id="edit-prix-officiel" class="form-control" value="${nettoyerPrix(prix_officiel)}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Réel (€) :</label><input type="text" id="edit-prix-reel" class="form-control" value="${nettoyerPrix(prix_reel)}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Format :</label><input type="text" id="edit-format" class="form-control" value="${format || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Pages :</label><input type="number" id="edit-pages" class="form-control" value="${pages || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Prix Officiel (€) :</label><input type="text" id="edit-prix-officiel" class="form-control" value="${nettoyerPrix(prix_officiel)}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Prix Réel (€) :</label><input type="text" id="edit-prix-reel" class="form-control" value="${nettoyerPrix(prix_reel)}"></div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>
-                <div class="col-md-6 mb-2"><label class="fw-bold">Tags :</label><input type="text" id="edit-tags" class="form-control" value="${tagsPropres}"></div>
+                <div class="col-md-6 mb-2">
+                    <label class="fw-bold">Format :</label>
+                    <select id="edit-format" class="form-select">
+                        <option value="Physique" ${format === 'Physique' ? 'selected' : ''}>Physique</option>
+                        <option value="E-Book" ${format === 'E-Book' ? 'selected' : ''}>E-Book</option>
+                        <option value="Audio" ${format === 'Audio' ? 'selected' : ''}>Audio</option>
+                    </select>
+                </div>
             </div>
 
             <div class="row">
@@ -749,7 +748,7 @@ function passerEnModeEdition(index) {
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="fw-bold">Avis & Historique :</label>
+                    <label class="fw-bold">Mon Avis & Historique :</label>
                     <button type="button" class="btn btn-sm btn-outline-info" onclick="ajouterBlocRelecture()">+ Ajouter une relecture</button>
                 </div>
                 <textarea id="edit-review" class="form-control" rows="4">${review || ''}</textarea>
@@ -757,7 +756,7 @@ function passerEnModeEdition(index) {
 
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <button type="button" class="btn btn-secondary" onclick="ouvrirFicheLivre(${index})">Annuler</button>
-                <button type="submit" class="btn btn-success">💾 Tout Enregistrer</button>
+                <button type="submit" class="btn btn-success">💾 Enregistrer mes modifications</button>
             </div>
         </form>`;
 
@@ -787,7 +786,6 @@ function sauvegarderModification(event, index) {
         prix_reel: document.getElementById("edit-prix-reel").value,
         format: document.getElementById("edit-format").value,
         genre: document.getElementById("edit-genre").value,
-        tags: document.getElementById("edit-tags").value,
         statut: document.getElementById("edit-statut").value,
         notes: document.getElementById("edit-note").value,
         review: document.getElementById("edit-review").value,
@@ -818,7 +816,6 @@ function sauvegarderModification(event, index) {
                 tousLesLivres[index][13] = livreModifie.statut;
                 tousLesLivres[index][14] = livreModifie.notes;
                 tousLesLivres[index][15] = livreModifie.review;
-                tousLesLivres[index][16] = livreModifie.tags;
                 tousLesLivres[index][17] = livreModifie.coup_de_coeur ? "VRAI" : "FAUX";
                 tousLesLivres[index][18] = livreModifie.spice;
                 tousLesLivres[index][19] = livreModifie.citation;
