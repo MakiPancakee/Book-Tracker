@@ -404,12 +404,16 @@ function rechercherLivreAPI() {
 /* ========================================================
    FICHE DÉTAILLÉE ET RELECTURES MULTIPLES
    ======================================================== */
+/* ========================================================
+   FICHE DÉTAILLÉE ET RELECTURES MULTIPLES
+   ======================================================== */
 function ouvrirFicheLivre(index) {
     const livreActuel = tousLesLivres[index];
     if (!livreActuel) return;
 
-    const titreCible = (livreActuel[6] || "").trim().toLowerCase();
-    const doublons = tousLesLivres.filter(l => (l[6] || "").trim().toLowerCase() === titreCible);
+    // Conversion explicite en String pour éviter les erreurs sur les titres numériques (ex: 1984)
+    const titreCible = String(livreActuel[6] || "").trim().toLowerCase();
+    const doublons = tousLesLivres.filter(l => String(l[6] || "").trim().toLowerCase() === titreCible);
 
     let tousLesAvis = [];
     let totalPages = 0;
@@ -429,7 +433,7 @@ function ouvrirFicheLivre(index) {
         if (prix_officiel) totalPrixOfficiel += parseFloat(String(prix_officiel).replace(',', '.')) || 0;
         if (coup_de_coeur === "VRAI" || coup_de_coeur === true) estCoupDeCoeurGlobal = true;
 
-        if (review && review.trim() !== "") {
+        if (review && String(review).trim() !== "") {
             tousLesAvis.push(`<div class="text-muted small mb-1"><em>Exemplaire (${personne || 'Moi'} - ${format || 'Standard'}) :</em></div>` + review);
         }
     });
