@@ -499,6 +499,29 @@ async function chargerLivres() {
     }
 }
 
+function formatStatut(statut) {
+    if (!statut) return "Inconnu";
+
+    // Convertit et nettoie la valeur pour gérer les différents formats possibles
+    const statutClean = String(statut).trim().toLowerCase();
+
+    switch (statutClean) {
+        case "lu":
+        case "lus":
+            return "Lu";
+        case "en_cours":
+        case "en cours":
+            return "En cours";
+        case "a_lire":
+        case "à lire":
+            return "À lire";
+        case "abandonne":
+        case "abandonné":
+            return "Abandonné";
+        default:
+            return statut; // Retourne le statut original s'il ne correspond à aucun cas
+    }
+}
 
 /* ============================================================
    8. FILTRES
