@@ -2415,7 +2415,13 @@ async function rechercherLivreAPI() {
                     info.pageCount || "",
 
                 genre:
-                    info.categories?.[0] || ""
+                    info.categories?.[0] || "",
+
+                // Ajout du prix officiel
+                prixOfficiel:
+                    item.saleInfo?.retailPrice?.amount ||
+                    item.saleInfo?.listPrice?.amount ||
+                    ""
 
             };
 
@@ -2434,9 +2440,8 @@ async function rechercherLivreAPI() {
 
                 <div class="d-flex align-items-center gap-2">
 
-                    ${
-                        livreAPI.couverture
-                            ? `
+                    ${livreAPI.couverture
+                    ? `
                                 <img
                                     src="${echapperHTML(livreAPI.couverture)}"
                                     style="
@@ -2446,8 +2451,8 @@ async function rechercherLivreAPI() {
                                     "
                                 >
                               `
-                            : ""
-                    }
+                    : ""
+                }
 
                     <div>
 
@@ -2498,27 +2503,25 @@ function remplirDepuisGoogleBooks(livre) {
     document.getElementById("titre").value =
         livre.titre;
 
-
     document.getElementById("auteur").value =
         livre.auteur;
-
 
     document.getElementById("nouveau-couverture").value =
         livre.couverture;
 
-
     document.getElementById("nouveau-pages").value =
         livre.pages;
-
 
     document.getElementById("nouveau-genre").value =
         livre.genre;
 
+    // Ajout du remplissage du prix officiel
+    document.getElementById("nouveau-prix-officiel").value =
+        livre.prixOfficiel;
 
     document.getElementById("resultats-api").innerHTML =
         "";
 }
-
 
 /* ============================================================
    18. FICHE DÉTAILLÉE D'UN LIVRE
@@ -2532,6 +2535,7 @@ function remplirDepuisGoogleBooks(livre) {
  *
  * On regroupe donc les entrées portant le même titre.
  */
+
 function ouvrirFicheLivre(index) {
 
     const livre =
@@ -2547,12 +2551,12 @@ function ouvrirFicheLivre(index) {
      * Recherche des autres exemplaires du même titre.
      */
     const titreRecherche =
-        livre.titre.trim().toLowerCase();
+        String(livre.titre || "").trim().toLowerCase();
 
 
     const doublons =
         tousLesLivres.filter(element =>
-            element.titre.trim().toLowerCase() ===
+            String(element.titre || "").trim().toLowerCase() ===
             titreRecherche
         );
 
@@ -2667,11 +2671,10 @@ function ouvrirFicheLivre(index) {
                 <strong>Période de lecture :</strong>
                 Du ${echapperHTML(livre.dateDebut)}
                 au ${echapperHTML(livre.dateFin)}
-                ${
-                    livre.duree
-                        ? `(${echapperHTML(livre.duree)} jours)`
-                        : ""
-                }
+                ${livre.duree
+                ? `(${echapperHTML(livre.duree)} jours)`
+                : ""
+            }
              </p>`;
 
     }
@@ -2744,9 +2747,8 @@ function ouvrirFicheLivre(index) {
                 </h5>
 
 
-                ${
-                    doublons.length > 1
-                        ? `
+                ${doublons.length > 1
+            ? `
                             <div class="alert alert-info py-2">
                                 ℹ️ Ce livre est enregistré
                                 en <strong>
@@ -2754,8 +2756,8 @@ function ouvrirFicheLivre(index) {
                                 </strong> exemplaires / éditions.
                             </div>
                           `
-                        : ""
-                }
+            : ""
+        }
 
 
                 <hr>
@@ -2763,9 +2765,8 @@ function ouvrirFicheLivre(index) {
 
                 <div class="row g-4">
 
-                    ${
-                        livre.couverture
-                            ? `
+                    ${livre.couverture
+            ? `
                                 <div class="col-md-4">
 
                                     <img
@@ -2776,29 +2777,28 @@ function ouvrirFicheLivre(index) {
 
                                 </div>
                               `
-                            : ""
-                    }
+            : ""
+        }
 
 
-                    <div class="${
-                        livre.couverture
-                            ? "col-md-8"
-                            : "col-12"
-                    }">
+                    <div class="${livre.couverture
+            ? "col-md-8"
+            : "col-12"
+        }">
 
                         <p>
                             <strong>Propriétaires / Lecteurs :</strong>
                             ${Array.from(personnes)
-                                .map(echapperHTML)
-                                .join(", ") || "-"}
+            .map(echapperHTML)
+            .join(", ") || "-"}
                         </p>
 
 
                         <p>
                             <strong>Formats :</strong>
                             ${Array.from(formats)
-                                .map(echapperHTML)
-                                .join(", ") || "-"}
+            .map(echapperHTML)
+            .join(", ") || "-"}
                         </p>
 
 
@@ -3048,25 +3048,32 @@ function passerEnModeEdition(index) {
         .getElementById("btn-annuler-edition")
         .addEventListener(
             "click",
-            () => ouvrirFicheLivre(index)
+            () => {
+                // On vérifie que l'index existe avant d'ouvrir la fiche
+                if (typeof index !== 'undefined' && index !== null) {
+                    ouvrirFicheLivre(index);
+                } else {
+                    console.warn("Index non défini pour l'annulation");
+                    // Optionnel : fermer directement la modale si l'index est perdu
+                }
+            }
         );
-}
 
 
-/*
- * Génère le formulaire d'édition.
- */
-function creerFormulaireEdition(livre, index) {
+    /*
+     * Génère le formulaire d'édition.
+     */
+    function creerFormulaireEdition(livre, index) {
 
-    const note =
-        parseInt(livre.note) || 0;
-
-
-    const spice =
-        parseInt(livre.spice) || 0;
+        const note =
+            parseInt(livre.note) || 0;
 
 
-    return `
+        const spice =
+            parseInt(livre.spice) || 0;
+
+
+        return `
 
         <div class="card shadow-lg bg-white"
              style="
@@ -3230,8 +3237,8 @@ function creerFormulaireEdition(livre, index) {
                                 id="edit-prix-officiel"
                                 class="form-control"
                                 value="${echapperAttribut(
-                                    nettoyerPrix(livre.prixOfficiel)
-                                )}"
+            nettoyerPrix(livre.prixOfficiel)
+        )}"
                             >
 
                         </div>
@@ -3247,8 +3254,8 @@ function creerFormulaireEdition(livre, index) {
                                 id="edit-prix-reel"
                                 class="form-control"
                                 value="${echapperAttribut(
-                                    nettoyerPrix(livre.prixReel)
-                                )}"
+            nettoyerPrix(livre.prixReel)
+        )}"
                             >
 
                         </div>
@@ -3284,19 +3291,19 @@ function creerFormulaireEdition(livre, index) {
                                 class="form-select">
 
                                 ${creerOption(
-                                    "Physique",
-                                    livre.format
-                                )}
+            "Physique",
+            livre.format
+        )}
 
                                 ${creerOption(
-                                    "E-Book",
-                                    livre.format
-                                )}
+            "E-Book",
+            livre.format
+        )}
 
                                 ${creerOption(
-                                    "Audio",
-                                    livre.format
-                                )}
+            "Audio",
+            livre.format
+        )}
 
                             </select>
 
@@ -3318,29 +3325,29 @@ function creerFormulaireEdition(livre, index) {
                                 class="form-select">
 
                                 ${creerOption(
-                                    "À lire",
-                                    livre.statut
-                                )}
+            "À lire",
+            livre.statut
+        )}
 
                                 ${creerOption(
-                                    "En cours",
-                                    livre.statut
-                                )}
+            "En cours",
+            livre.statut
+        )}
 
                                 ${creerOption(
-                                    "Pause",
-                                    livre.statut
-                                )}
+            "Pause",
+            livre.statut
+        )}
 
                                 ${creerOption(
-                                    "Terminé",
-                                    livre.statut
-                                )}
+            "Terminé",
+            livre.statut
+        )}
 
                                 ${creerOption(
-                                    "Abandonné",
-                                    livre.statut
-                                )}
+            "Abandonné",
+            livre.statut
+        )}
 
                             </select>
 
@@ -3505,495 +3512,492 @@ function creerFormulaireEdition(livre, index) {
 
         </div>
     `;
-}
+    }
 
 
-/*
- * Crée une option de <select>.
- */
-function creerOption(valeur, valeurActuelle) {
+    /*
+     * Crée une option de <select>.
+     */
+    function creerOption(valeur, valeurActuelle) {
 
-    const selected =
-        String(valeurActuelle || "").includes(valeur)
-            ? "selected"
-            : "";
+        const selected =
+            String(valeurActuelle || "").includes(valeur)
+                ? "selected"
+                : "";
 
 
-    return `
+        return `
         <option value="${valeur}" ${selected}>
             ${valeur}
         </option>
     `;
-}
+    }
 
 
-/*
- * Crée les étoiles d'édition.
- */
-function creerEtoilesEdition(note) {
+    /*
+     * Crée les étoiles d'édition.
+     */
+    function creerEtoilesEdition(note) {
 
-    return Array.from(
-        { length: 5 },
-        (_, index) => `
+        return Array.from(
+            { length: 5 },
+            (_, index) => `
 
             <span
-                class="${
-                    index < note
-                        ? "text-warning"
-                        : "text-muted"
+                class="${index < note
+                    ? "text-warning"
+                    : "text-muted"
                 }"
                 style="cursor:pointer;">
                 ★
             </span>
 
         `
-    ).join("");
-}
+        ).join("");
+    }
 
 
-/*
- * Crée les piments d'édition.
- */
-function creerPimentsEdition(spice) {
+    /*
+     * Crée les piments d'édition.
+     */
+    function creerPimentsEdition(spice) {
 
-    return Array.from(
-        { length: 5 },
-        (_, index) => `
+        return Array.from(
+            { length: 5 },
+            (_, index) => `
 
             <span
                 style="
                     cursor:pointer;
-                    filter:${
-                        index < spice
-                            ? "none"
-                            : "grayscale(100%) opacity(40%)"
-                    };
+                    filter:${index < spice
+                    ? "none"
+                    : "grayscale(100%) opacity(40%)"
+                };
                 ">
                 🌶️
             </span>
 
         `
-    ).join("");
-}
-
-
-/*
- * Change la note pendant l'édition.
- */
-function selectionnerEtoileEdition(note) {
-
-    document.getElementById("edit-note").value =
-        note;
-
-
-    document
-        .querySelectorAll("#star-rating span")
-        .forEach((etoile, index) => {
-
-            etoile.classList.toggle(
-                "text-warning",
-                index < note
-            );
-
-            etoile.classList.toggle(
-                "text-muted",
-                index >= note
-            );
-
-        });
-}
-
-
-/*
- * Change le niveau de spice pendant l'édition.
- */
-function selectionnerPimentEdition(note) {
-
-    document.getElementById("edit-spice").value =
-        note;
-
-
-    document
-        .querySelectorAll("#spice-rating span")
-        .forEach((piment, index) => {
-
-            piment.style.filter =
-                index < note
-                    ? "none"
-                    : "grayscale(100%) opacity(40%)";
-
-        });
-}
-
-
-/*
- * Sauvegarde les modifications d'un livre.
- */
-async function sauvegarderModification(event, index) {
-
-    event.preventDefault();
-
-
-    const livre =
-        tousLesLivres[index];
+        ).join("");
+    }
 
 
     /*
-     * Données envoyées à Google Apps Script.
+     * Change la note pendant l'édition.
      */
-    const modifications = {
+    function selectionnerEtoileEdition(note) {
 
-        action: "UPDATE",
+        document.getElementById("edit-note").value =
+            note;
 
-        ligne: index + 2,
 
-        titre:
-            document.getElementById("edit-titre").value,
+        document
+            .querySelectorAll("#star-rating span")
+            .forEach((etoile, index) => {
 
-        auteur:
-            document.getElementById("edit-auteur").value,
+                etoile.classList.toggle(
+                    "text-warning",
+                    index < note
+                );
 
-        couverture:
-            document.getElementById("edit-couverture").value,
+                etoile.classList.toggle(
+                    "text-muted",
+                    index >= note
+                );
 
-        date_debut:
-            document.getElementById("edit-date-debut").value,
-
-        date_fin:
-            document.getElementById("edit-date-fin").value,
-
-        duree:
-            document.getElementById("edit-duree").value,
-
-        pages:
-            document.getElementById("edit-pages").value,
-
-        prix_officiel:
-            document.getElementById("edit-prix-officiel").value,
-
-        prix_reel:
-            document.getElementById("edit-prix-reel").value,
-
-        format:
-            document.getElementById("edit-format").value,
-
-        genre:
-            document.getElementById("edit-genre").value,
-
-        statut:
-            document.getElementById("edit-statut").value,
-
-        notes:
-            document.getElementById("edit-note").value,
-
-        review:
-            document.getElementById("edit-review").value,
-
-        anneeLecture:
-            document.getElementById("edit-annee").value,
-
-        coup_de_coeur:
-            document.getElementById("edit-coeur").checked,
-
-        spice:
-            document.getElementById("edit-spice").value,
-
-        citation:
-            document.getElementById("edit-citation").value.trim()
-    };
+            });
+    }
 
 
     /*
-     * Le Google Apps Script actuel attend probablement
-     * encore un champ correspondant à Q.
-     *
-     * Comme ta colonne Q est l'année, nous envoyons
-     * également le nom "annee".
-     *
-     * Si ton Apps Script utilise un autre nom pour Q,
-     * il faudra simplement adapter cette ligne.
+     * Change le niveau de spice pendant l'édition.
      */
-    modifications.annee =
-        modifications.anneeLecture;
+    function selectionnerPimentEdition(note) {
+
+        document.getElementById("edit-spice").value =
+            note;
 
 
-    try {
+        document
+            .querySelectorAll("#spice-rating span")
+            .forEach((piment, index) => {
 
-        const resultat =
-            await envoyerAuGoogleSheet(modifications);
+                piment.style.filter =
+                    index < note
+                        ? "none"
+                        : "grayscale(100%) opacity(40%)";
+
+            });
+    }
 
 
-        if (resultat?.statut !== "succès") {
+    /*
+     * Sauvegarde les modifications d'un livre.
+     */
+    async function sauvegarderModification(event, index) {
+
+        event.preventDefault();
+
+
+        const livre =
+            tousLesLivres[index];
+
+
+        /*
+         * Données envoyées à Google Apps Script.
+         */
+        const modifications = {
+
+            action: "UPDATE",
+
+            ligne: index + 2,
+
+            titre:
+                document.getElementById("edit-titre").value,
+
+            auteur:
+                document.getElementById("edit-auteur").value,
+
+            couverture:
+                document.getElementById("edit-couverture").value,
+
+            date_debut:
+                document.getElementById("edit-date-debut").value,
+
+            date_fin:
+                document.getElementById("edit-date-fin").value,
+
+            duree:
+                document.getElementById("edit-duree").value,
+
+            pages:
+                document.getElementById("edit-pages").value,
+
+            prix_officiel:
+                document.getElementById("edit-prix-officiel").value,
+
+            prix_reel:
+                document.getElementById("edit-prix-reel").value,
+
+            format:
+                document.getElementById("edit-format").value,
+
+            genre:
+                document.getElementById("edit-genre").value,
+
+            statut:
+                document.getElementById("edit-statut").value,
+
+            notes:
+                document.getElementById("edit-note").value,
+
+            review:
+                document.getElementById("edit-review").value,
+
+            anneeLecture:
+                document.getElementById("edit-annee").value,
+
+            coup_de_coeur:
+                document.getElementById("edit-coeur").checked,
+
+            spice:
+                document.getElementById("edit-spice").value,
+
+            citation:
+                document.getElementById("edit-citation").value.trim()
+        };
+
+
+        /*
+         * Le Google Apps Script actuel attend probablement
+         * encore un champ correspondant à Q.
+         *
+         * Comme ta colonne Q est l'année, nous envoyons
+         * également le nom "annee".
+         *
+         * Si ton Apps Script utilise un autre nom pour Q,
+         * il faudra simplement adapter cette ligne.
+         */
+        modifications.annee =
+            modifications.anneeLecture;
+
+
+        try {
+
+            const resultat =
+                await envoyerAuGoogleSheet(modifications);
+
+
+            if (resultat?.statut !== "succès") {
+
+                alert(
+                    "Erreur : " +
+                    (resultat?.message || "Erreur inconnue")
+                );
+
+                return;
+            }
+
+
+            /*
+             * Mise à jour locale immédiate.
+             *
+             * Cela évite de devoir obligatoirement recharger
+             * toute la page.
+             */
+            livre.titre =
+                modifications.titre;
+
+            livre.auteur =
+                modifications.auteur;
+
+            livre.couverture =
+                modifications.couverture;
+
+            livre.dateDebut =
+                modifications.date_debut;
+
+            livre.dateFin =
+                modifications.date_fin;
+
+            livre.duree =
+                modifications.duree;
+
+            livre.pages =
+                modifications.pages;
+
+            livre.prixOfficiel =
+                modifications.prix_officiel;
+
+            livre.prixReel =
+                modifications.prix_reel;
+
+            livre.format =
+                modifications.format;
+
+            livre.genre =
+                modifications.genre;
+
+            livre.statut =
+                modifications.statut;
+
+            livre.note =
+                modifications.notes;
+
+            livre.review =
+                modifications.review;
+
+            livre.anneeLecture =
+                modifications.anneeLecture;
+
+            livre.coupDeCoeur =
+                modifications.coup_de_coeur;
+
+            livre.spice =
+                modifications.spice;
+
+            livre.citation =
+                modifications.citation;
+
+
+            /*
+             * Ferme la modale puis rafraîchit l'affichage.
+             */
+            fermerFicheLivre();
+
+            appliquerFiltresEtAfficher();
+
+            afficherCarousel();
+
+        }
+
+        catch (erreur) {
+
+            console.error(erreur);
 
             alert(
-                "Erreur : " +
-                (resultat?.message || "Erreur inconnue")
+                "Impossible d'enregistrer les modifications."
             );
+        }
+    }
 
+
+    /*
+     * Ajoute un séparateur de relecture dans l'avis.
+     */
+    function ajouterBlocRelecture() {
+
+        const champ =
+            document.getElementById("edit-review");
+
+
+        if (!champ) {
             return;
         }
 
 
-        /*
-         * Mise à jour locale immédiate.
-         *
-         * Cela évite de devoir obligatoirement recharger
-         * toute la page.
-         */
-        livre.titre =
-            modifications.titre;
-
-        livre.auteur =
-            modifications.auteur;
-
-        livre.couverture =
-            modifications.couverture;
-
-        livre.dateDebut =
-            modifications.date_debut;
-
-        livre.dateFin =
-            modifications.date_fin;
-
-        livre.duree =
-            modifications.duree;
-
-        livre.pages =
-            modifications.pages;
-
-        livre.prixOfficiel =
-            modifications.prix_officiel;
-
-        livre.prixReel =
-            modifications.prix_reel;
-
-        livre.format =
-            modifications.format;
-
-        livre.genre =
-            modifications.genre;
-
-        livre.statut =
-            modifications.statut;
-
-        livre.note =
-            modifications.notes;
-
-        livre.review =
-            modifications.review;
-
-        livre.anneeLecture =
-            modifications.anneeLecture;
-
-        livre.coupDeCoeur =
-            modifications.coup_de_coeur;
-
-        livre.spice =
-            modifications.spice;
-
-        livre.citation =
-            modifications.citation;
+        const date =
+            new Date().toLocaleDateString("fr-FR");
 
 
-        /*
-         * Ferme la modale puis rafraîchit l'affichage.
-         */
-        fermerFicheLivre();
-
-        appliquerFiltresEtAfficher();
-
-        afficherCarousel();
-
-    }
-
-    catch (erreur) {
-
-        console.error(erreur);
-
-        alert(
-            "Impossible d'enregistrer les modifications."
-        );
-    }
-}
+        champ.value +=
+            `\n\n--- 🔄 Relecture du ${date} ---\n`;
 
 
-/*
- * Ajoute un séparateur de relecture dans l'avis.
- */
-function ajouterBlocRelecture() {
-
-    const champ =
-        document.getElementById("edit-review");
-
-
-    if (!champ) {
-        return;
+        champ.focus();
     }
 
 
-    const date =
-        new Date().toLocaleDateString("fr-FR");
+    /* ============================================================
+       20. COMMUNICATION GOOGLE SHEETS — FONCTION CENTRALE
+    ============================================================ */
+
+    /*
+     * Toutes les requêtes POST vers Google Sheets passent
+     * par cette fonction.
+     *
+     * C'est pratique parce que si un jour tu changes ton
+     * système de communication, tu n'auras qu'une fonction
+     * à modifier.
+     */
+    async function envoyerAuGoogleSheet(donnees) {
+
+        const reponse =
+            await fetch(
+                URL_APPS_SCRIPT,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "text/plain;charset=utf-8"
+                    },
+
+                    body:
+                        JSON.stringify(donnees)
+                }
+            );
 
 
-    champ.value +=
-        `\n\n--- 🔄 Relecture du ${date} ---\n`;
-
-
-    champ.focus();
-}
-
-
-/* ============================================================
-   20. COMMUNICATION GOOGLE SHEETS — FONCTION CENTRALE
-============================================================ */
-
-/*
- * Toutes les requêtes POST vers Google Sheets passent
- * par cette fonction.
- *
- * C'est pratique parce que si un jour tu changes ton
- * système de communication, tu n'auras qu'une fonction
- * à modifier.
- */
-async function envoyerAuGoogleSheet(donnees) {
-
-    const reponse =
-        await fetch(
-            URL_APPS_SCRIPT,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "text/plain;charset=utf-8"
-                },
-
-                body:
-                    JSON.stringify(donnees)
-            }
-        );
-
-
-    return await reponse.json();
-}
-
-
-/* ============================================================
-   21. OUTILS D'AFFICHAGE
-============================================================ */
-
-/*
- * Transforme un statut brut en statut plus joli.
- */
-function formatStatut(statut) {
-
-    if (!statut) {
-        return "-";
+        return await reponse.json();
     }
 
 
-    if (statut.includes("À lire")) {
-        return "À lire 📚";
+    /* ============================================================
+       21. OUTILS D'AFFICHAGE
+    ============================================================ */
+
+    /*
+     * Transforme un statut brut en statut plus joli.
+     */
+    function formatStatut(statut) {
+
+        if (!statut) {
+            return "-";
+        }
+
+
+        if (statut.includes("À lire")) {
+            return "À lire 📚";
+        }
+
+
+        if (statut.includes("En cours")) {
+            return "En cours 📖";
+        }
+
+
+        if (statut.includes("Pause")) {
+            return "Pause ⏸";
+        }
+
+
+        if (statut.includes("Terminé")) {
+            return "Terminé ✔️";
+        }
+
+
+        if (statut.includes("Abandonné")) {
+            return "Abandonné ❌☠️";
+        }
+
+
+        return statut;
     }
 
 
-    if (statut.includes("En cours")) {
-        return "En cours 📖";
-    }
+    /*
+     * Génère les cinq étoiles utilisées pour afficher
+     * la note d'un livre.
+     */
+    function genererEtoiles(note) {
+
+        const valeur =
+            parseInt(note) || 0;
 
 
-    if (statut.includes("Pause")) {
-        return "Pause ⏸";
-    }
-
-
-    if (statut.includes("Terminé")) {
-        return "Terminé ✔️";
-    }
-
-
-    if (statut.includes("Abandonné")) {
-        return "Abandonné ❌☠️";
-    }
-
-
-    return statut;
-}
-
-
-/*
- * Génère les cinq étoiles utilisées pour afficher
- * la note d'un livre.
- */
-function genererEtoiles(note) {
-
-    const valeur =
-        parseInt(note) || 0;
-
-
-    return Array.from(
-        { length: 5 },
-        (_, index) => `
+        return Array.from(
+            { length: 5 },
+            (_, index) => `
 
             <span
-                class="${
-                    index < valeur
-                        ? "text-warning"
-                        : "text-muted"
+                class="${index < valeur
+                    ? "text-warning"
+                    : "text-muted"
                 }">
                 ★
             </span>
 
         `
-    ).join("");
-}
-
-
-/* ============================================================
-   22. SÉCURITÉ HTML
-============================================================ */
-
-/*
- * Cette fonction protège le HTML lorsqu'on affiche
- * une information provenant du Google Sheet.
- *
- * Exemple :
- *
- * Si quelqu'un écrit dans le Sheet :
- *
- * <script>alert("bonjour")</script>
- *
- * le navigateur ne doit PAS exécuter ce code.
- *
- * Cette fonction transforme les caractères spéciaux
- * en texte inoffensif.
- */
-function echapperHTML(valeur) {
-
-    if (valeur === null || valeur === undefined) {
-        return "";
+        ).join("");
     }
 
 
-    return String(valeur)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+    /* ============================================================
+       22. SÉCURITÉ HTML
+    ============================================================ */
+
+    /*
+     * Cette fonction protège le HTML lorsqu'on affiche
+     * une information provenant du Google Sheet.
+     *
+     * Exemple :
+     *
+     * Si quelqu'un écrit dans le Sheet :
+     *
+     * <script>alert("bonjour")</script>
+     *
+     * le navigateur ne doit PAS exécuter ce code.
+     *
+     * Cette fonction transforme les caractères spéciaux
+     * en texte inoffensif.
+     */
+    function echapperHTML(valeur) {
+
+        if (valeur === null || valeur === undefined) {
+            return "";
+        }
 
 
-/*
- * Version destinée aux valeurs placées
- * dans un attribut HTML comme :
- *
- * value="..."
- */
-function echapperAttribut(valeur) {
+        return String(valeur)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-    return echapperHTML(valeur);
-}
+
+    /*
+     * Version destinée aux valeurs placées
+     * dans un attribut HTML comme :
+     *
+     * value="..."
+     */
+    function echapperAttribut(valeur) {
+
+        return echapperHTML(valeur);
+    }
 
 
 /* ============================================================
