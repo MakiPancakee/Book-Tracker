@@ -5,7 +5,7 @@ function nettoyerPrix(valeur) {
 
     // Si Google Sheets a envoyé une date (contient 'T', 'GMT' ou des tirets de type AAAA-MM-JJ)
     if (str.includes("T") || str.includes("GMT") || /^\d{4}-\d{2}-\d{2}/.test(str)) {
-        return ""; // Ou met 0 selon ce que tu préfères
+        return ""; 
     }
 
     // Garde uniquement les chiffres, les points et les virgules
@@ -25,6 +25,7 @@ let vueCoupDeCoeur = false;
 let carrouselTimer = null;
 let langueAPI = "fr";
 let timeoutRecherche = null;
+let citationsActuelles = []; // Stocke les citations de la vue en cours
 
 document.addEventListener("DOMContentLoaded", () => {
     verifierProfil();
@@ -53,17 +54,96 @@ function choisirProfil(nom) {
 }
 
 /* ========================================================
-   CHARGEMENT DES DONNÉES
+   CHARGEMENT DES DONNÉES ET WIDGETS
    ======================================================== */
 function chargerLivres() {
     fetch(URL_APPS_SCRIPT)
         .then(reponse => reponse.json())
         .then(lignes => {
             tousLesLivres = lignes.slice(1); // Retire la ligne d'en-tête
-            afficherLivres();
+            
+            // On lance la vue actuelle, ce qui va filtrer, appeler les widgets puis afficher la grille
+            changerVue(filtrePersonne); 
             afficherCarousel();
         })
         .catch(erreur => console.error("Erreur chargement :", erreur));
+}
+
+function mettreAJourWidgets(livresListe) {
+    let totalLus = 0;
+    let totalPages = 0;
+    let budgetReel = 0;
+    let budgetOff = 0;
+    let compteGenres = {};
+    citationsActuelles = []; 
+
+    livresListe.forEach(l => {
+        const statut = l[13] || "";
+
+        if (statut.includes("Terminé") || statut.includes("Lu")) {
+            totalLus++;
+            totalPages += parseInt(l[8]) || 0;
+
+            const genreStr = l[12];
+            if (genreStr) {
+                const genres = genreStr.split(',').map(g => g.trim()).filter(g => g !== "");
+                genres.forEach(g => {
+                    compteGenres[g] = (compteGenres[g] || 0) + 1;
+                });
+            }
+        }
+
+        budgetReel += parseFloat(nettoyerPrix(l[10])) || 0;
+        budgetOff += parseFloat(nettoyerPrix(l[9])) || 0;
+
+        const citationsBrutes = l[19];
+        const titre = l[6] || "Livre inconnu";
+        if (citationsBrutes && citationsBrutes.trim() !== "") {
+            const arrayCitations = citationsBrutes.split(';').map(c => c.trim()).filter(c => c !== "");
+            arrayCitations.forEach(cit => {
+                citationsActuelles.push({ texte: cit, source: titre });
+            });
+        }
+    });
+
+    const topGenres = Object.entries(compteGenres)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(entree => entree[0]);
+
+    document.getElementById("stat-lus").innerText = totalLus;
+    document.getElementById("stat-budget").innerText = `${budgetReel.toFixed(0)} € / ${budgetOff.toFixed(0)} €`;
+    document.getElementById("stat-pages").innerText = totalPages;
+    document.getElementById("stat-genres").innerText = topGenres.length > 0 ? topGenres.join(", ") : "-";
+
+    afficherCitationAleatoire();
+}
+
+function afficherCitationAleatoire() {
+    const encartTexte = document.getElementById("citation-texte");
+    const encartSource = document.getElementById("citation-source");
+
+    if (citationsActuelles.length === 0) {
+        encartTexte.innerText = "Aucune citation enregistrée pour l'instant.";
+        encartSource.innerText = "";
+        return;
+    }
+
+    const indexAleatoire = Math.floor(Math.random() * citationsActuelles.length);
+    const citationChoisie = citationsActuelles[indexAleatoire];
+
+    encartTexte.style.opacity = 0;
+    encartSource.style.opacity = 0;
+
+    setTimeout(() => {
+        encartTexte.innerText = citationChoisie.texte;
+        encartSource.innerHTML = `— <em>${citationChoisie.source}</em>`;
+
+        encartTexte.style.transition = "opacity 0.5s ease-in-out";
+        encartSource.style.transition = "opacity 0.5s ease-in-out";
+        encartTexte.style.opacity = 1;
+        encartSource.style.opacity = 1;
+    }, 200);
 }
 
 /* ========================================================
@@ -82,7 +162,6 @@ function changerVue(vueDemandee) {
         vueCoupDeCoeur = false;
     }
 
-    // Le carrousel reste masqué en dehors de la vue Commune globale
     const sectionCarousel = document.getElementById("section-carousel");
     if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur) {
         sectionCarousel.style.display = "block";
@@ -94,6 +173,15 @@ function changerVue(vueDemandee) {
         ? "❤️ Mes Coups de Cœur"
         : (filtreStatut === "À lire" ? "📚 Ma Pile à Lire" : "Ma Bibliothèque");
 
+    // Filtrage pour les widgets et la grille
+    const livresFiltres = tousLesLivres.filter(l => {
+        const matchPersonne = (filtrePersonne === "Commune" || !filtrePersonne) ? true : (l[1] === filtrePersonne);
+        const matchStatut = (filtreStatut === "TOUS") ? true : (l[13] && l[13].includes(filtreStatut));
+        const matchCoeur = !vueCoupDeCoeur ? true : (l[17] === "VRAI" || l[17] === true);
+        return matchPersonne && matchStatut && matchCoeur;
+    });
+
+    mettreAJourWidgets(livresFiltres);
     afficherLivres();
 }
 
@@ -101,30 +189,17 @@ function afficherLivres() {
     const grille = document.getElementById("grille-livres");
     grille.innerHTML = "";
 
-    let livresLus = 0;
-    let budgetReel = 0;
-    let budgetOfficiel = 0;
-
     tousLesLivres.forEach((ligne, index) => {
         const personne = ligne[1];
         const couverture = ligne[5];
         const titre = ligne[6];
         const auteur = ligne[7];
-        const p_officiel = parseFloat(String(ligne[9]).replace(',', '.')) || 0;
-        const p_reel = parseFloat(String(ligne[10]).replace(',', '.')) || 0;
         const statut = ligne[13] || "";
         const estCoupDeCoeur = (ligne[17] === "VRAI" || ligne[17] === true);
 
         if (!titre) return;
 
-        // Statistiques
-        if (filtrePersonne === "Commune" || personne === filtrePersonne) {
-            if (statut.includes("Terminé")) livresLus++;
-            budgetOfficiel += p_officiel;
-            budgetReel += p_reel;
-        }
-
-        // Applique les filtres
+        // Applique les filtres pour l'affichage
         if (filtrePersonne !== "Commune" && personne !== filtrePersonne) return;
         if (filtreStatut === "À lire" && !statut.includes("À lire")) return;
         if (vueCoupDeCoeur && !estCoupDeCoeur) return;
@@ -153,9 +228,6 @@ function afficherLivres() {
         `;
         grille.innerHTML += carteHtml;
     });
-
-    document.getElementById("stat-lus").innerText = livresLus;
-    document.getElementById("stat-budget").innerText = `${budgetReel.toFixed(2)} € / ${budgetOfficiel.toFixed(2)} €`;
 }
 
 /* ========================================================
@@ -216,14 +288,13 @@ function demarrerAutoScrollCarousel() {
 /* ========================================================
    GESTION DES COUPS DE CŒUR
    ======================================================== */
-// Bascule rapide depuis la carte dans la grille
 function toggleCoupDeCoeur(event, index) {
     event.stopPropagation();
     const estCoupDeCoeur = (tousLesLivres[index][17] === "VRAI" || tousLesLivres[index][17] === true);
     const nouveauStatut = !estCoupDeCoeur;
 
     tousLesLivres[index][17] = nouveauStatut ? "VRAI" : "FAUX";
-    afficherLivres();
+    changerVue(filtrePersonne); 
 
     fetch(URL_APPS_SCRIPT, {
         method: "POST",
@@ -236,7 +307,6 @@ function toggleCoupDeCoeur(event, index) {
     }).catch(erreur => console.error("Erreur d'enregistrement du cœur :", erreur));
 }
 
-// Bascule depuis la pop-up de détails
 function toggleCoupDeCoeurPopup(index) {
     const estActuellementCoeur = (tousLesLivres[index][17] === "VRAI" || tousLesLivres[index][17] === true);
     const nouveauStatut = !estActuellementCoeur;
@@ -248,7 +318,7 @@ function toggleCoupDeCoeurPopup(index) {
         spanCoeur.innerText = nouveauStatut ? "❤️" : "🤍";
     }
 
-    afficherLivres();
+    changerVue(filtrePersonne);
     afficherCarousel();
 
     fetch(URL_APPS_SCRIPT, {
@@ -262,7 +332,6 @@ function toggleCoupDeCoeurPopup(index) {
     }).catch(erreur => console.error("Erreur d'enregistrement du cœur :", erreur));
 }
 
-// Bascule dans le formulaire d'ajout
 function toggleCoeurFormulaire() {
     const inputHidden = document.getElementById("nouveau-coeur");
     const spanCoeur = document.getElementById("form-coeur-btn");
@@ -283,14 +352,19 @@ function fermerFormulaire() {
     document.getElementById("modal-formulaire").classList.add("cache");
     document.getElementById("form-livre").reset();
     document.getElementById("nouveau-note").value = "0";
+    if(document.getElementById("nouveau-spice")) document.getElementById("nouveau-spice").value = "0";
 
-    // Réinitialise les étoiles
     document.querySelectorAll('#star-rating-creation span').forEach(e => {
         e.classList.remove('text-warning');
         e.classList.add('text-muted');
     });
+    
+    if(document.getElementById('spice-rating-creation')) {
+        document.querySelectorAll('#spice-rating-creation span').forEach(e => {
+            e.style.filter = 'grayscale(100%) opacity(40%)';
+        });
+    }
 
-    // Réinitialise le bouton cœur du formulaire
     document.getElementById("nouveau-coeur").value = "false";
     if (document.getElementById("form-coeur-btn")) {
         document.getElementById("form-coeur-btn").innerText = "🤍";
@@ -313,6 +387,22 @@ function selectionnerEtoile(valeur) {
     });
 }
 
+function selectionnerPiment(note) {
+    document.getElementById('edit-spice').value = note;
+    const piments = document.getElementById('spice-rating').children;
+    for (let i = 0; i < 5; i++) {
+        piments[i].style.filter = (i < note) ? 'none' : 'grayscale(100%) opacity(40%)';
+    }
+}
+
+function selectionnerPimentCreation(note) {
+    document.getElementById('nouveau-spice').value = note;
+    const piments = document.getElementById('spice-rating-creation').children;
+    for (let i = 0; i < 5; i++) {
+        piments[i].style.filter = (i < note) ? 'none' : 'grayscale(100%) opacity(40%)';
+    }
+}
+
 function soumettreLivre(event) {
     event.preventDefault();
     const nouveauLivre = {
@@ -323,7 +413,10 @@ function soumettreLivre(event) {
         auteur: document.getElementById("auteur").value,
         statut: document.getElementById("statut").value,
         note: document.getElementById("nouveau-note").value,
-        coup_de_coeur: document.getElementById("nouveau-coeur").value === "true"
+        coup_de_coeur: document.getElementById("nouveau-coeur").value === "true",
+        // Envoi des nouvelles données si elles existent
+        spice: document.getElementById("nouveau-spice") ? document.getElementById("nouveau-spice").value : "0",
+        citation: document.getElementById("nouveau-citation") ? document.getElementById("nouveau-citation").value.trim() : ""
     };
 
     fetch(URL_APPS_SCRIPT, {
@@ -362,10 +455,7 @@ function rechercherLivreAPI() {
 
     conteneur.innerHTML = "<div class='list-group-item text-muted'>Recherche en cours...</div>";
 
-    // 🔑 Remplace la chaîne ci-dessous par ta NOUVELLE clé Google
     const CLE_API = "AIzaSyC6NWy-fhdyj7295-uMW9MTRRdvBwyHtCI";
-
-    // Récupération de la langue sélectionnée (ou 'fr' par défaut)
     const langueFixe = typeof langueAPI !== 'undefined' ? langueAPI : 'fr';
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueFixe}&maxResults=5&key=${CLE_API}`;
 
@@ -422,9 +512,6 @@ function rechercherLivreAPI() {
 /* ========================================================
    FICHE DÉTAILLÉE ET RELECTURES MULTIPLES
    ======================================================== */
-/* ========================================================
-   FICHE DÉTAILLÉE ET RELECTURES MULTIPLES
-   ======================================================== */
 function ouvrirFicheLivre(index) {
     const livreActuel = tousLesLivres[index];
     if (!livreActuel) return;
@@ -464,7 +551,6 @@ function ouvrirFicheLivre(index) {
         `).join("");
     }
 
-    // Récupération sécurisée depuis le livre actuel (sans re-déclarer avec const)
     const auteurLivre = livreActuel[7] || "Auteur inconnu";
     const titreLivre = livreActuel[6] || "Sans titre";
     const couvertureLivre = livreActuel[5] || "";
@@ -472,7 +558,6 @@ function ouvrirFicheLivre(index) {
     const dateFinLivre = livreActuel[3];
     const dureeLivre = livreActuel[4];
 
-    // Gestion propre des dates (si absentes, on affiche l'année ou un message adapté)
     let infoLectureHtml = "";
     if (dateDebutLivre && dateFinLivre) {
         infoLectureHtml = `<p><strong>Période de lecture :</strong> Du ${dateDebutLivre} au ${dateFinLivre} (${dureeLivre || "?"} jours)</p>`;
@@ -532,8 +617,9 @@ function passerEnModeEdition(index) {
     const livre = tousLesLivres[index];
     if (!livre) return;
 
-    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livre;
+    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur, spicy, citation] = livre;
     const noteActuelle = parseInt(notes) || 0;
+    const spiceActuel = parseInt(spicy) || 0;
     const estCoupDeCoeur = (coup_de_coeur === "VRAI" || coup_de_coeur === true);
 
     const contenuEdit = `
@@ -553,32 +639,20 @@ function passerEnModeEdition(index) {
                 <div class="col-md-4 mb-2"><label class="fw-bold">Durée :</label><input type="text" id="edit-duree" class="form-control" value="${duree || ''}"></div>
             </div>
 
-            <!-- 🟢 GRILLE CORRIGÉE (4 champs x col-md-3 = 12) -->
             <div class="row">
-                <div class="col-md-3 mb-2">
-                    <label class="fw-bold">Pages :</label>
-                    <input type="number" id="edit-pages" class="form-control" value="${pages || ''}">
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="fw-bold">Prix Officiel (€) :</label>
-                    <input type="text" id="edit-prix-officiel" class="form-control" value="${nettoyerPrix(prix_officiel)}">
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="fw-bold">Prix Réel (€) :</label>
-                    <input type="text" id="edit-prix-reel" class="form-control" value="${nettoyerPrix(prix_reel)}">
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="fw-bold">Format :</label>
-                    <input type="text" id="edit-format" class="form-control" value="${format || ''}">
-                </div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Pages :</label><input type="number" id="edit-pages" class="form-control" value="${pages || ''}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Officiel (€) :</label><input type="text" id="edit-prix-officiel" class="form-control" value="${nettoyerPrix(prix_officiel)}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Réel (€) :</label><input type="text" id="edit-prix-reel" class="form-control" value="${nettoyerPrix(prix_reel)}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Format :</label><input type="text" id="edit-format" class="form-control" value="${format || ''}"></div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>
+                <div class="col-md-6 mb-2"><label class="fw-bold">Tags :</label><input type="text" id="edit-tags" class="form-control" value="${tags || ''}"></div>
             </div>
 
             <div class="row">
-                <div class="col-md-6 mb-2">
+                <div class="col-md-4 mb-2">
                     <label class="fw-bold">Statut :</label>
                     <select id="edit-statut" class="form-select">
                         <option value="À lire" ${statut && statut.includes('À lire') ? 'selected' : ''}>À lire 📚</option>
@@ -588,9 +662,9 @@ function passerEnModeEdition(index) {
                         <option value="Abandonné" ${statut && statut.includes('Abandonné') ? 'selected' : ''}>Abandonné ❌☠️</option>
                     </select>
                 </div>
-                <div class="col-md-6 mb-2">
+                <div class="col-md-4 mb-2">
                     <label class="fw-bold">Note :</label>
-                    <div id="star-rating" class="fs-3" style="cursor: pointer; user-select: none;">
+                    <div id="star-rating" class="fs-4" style="cursor: pointer; user-select: none;">
                         <span onclick="selectionnerEtoile(1)" class="${noteActuelle >= 1 ? 'text-warning' : 'text-muted'}">★</span>
                         <span onclick="selectionnerEtoile(2)" class="${noteActuelle >= 2 ? 'text-warning' : 'text-muted'}">★</span>
                         <span onclick="selectionnerEtoile(3)" class="${noteActuelle >= 3 ? 'text-warning' : 'text-muted'}">★</span>
@@ -599,11 +673,27 @@ function passerEnModeEdition(index) {
                     </div>
                     <input type="hidden" id="edit-note" value="${noteActuelle}">
                 </div>
+                <div class="col-md-4 mb-2">
+                    <label class="fw-bold">Spice :</label>
+                    <div id="spice-rating" class="fs-4" style="cursor: pointer; user-select: none;">
+                        <span onclick="selectionnerPiment(1)" style="filter: ${spiceActuel >= 1 ? 'none' : 'grayscale(100%) opacity(40%)'};">🌶️</span>
+                        <span onclick="selectionnerPiment(2)" style="filter: ${spiceActuel >= 2 ? 'none' : 'grayscale(100%) opacity(40%)'};">🌶️</span>
+                        <span onclick="selectionnerPiment(3)" style="filter: ${spiceActuel >= 3 ? 'none' : 'grayscale(100%) opacity(40%)'};">🌶️</span>
+                        <span onclick="selectionnerPiment(4)" style="filter: ${spiceActuel >= 4 ? 'none' : 'grayscale(100%) opacity(40%)'};">🌶️</span>
+                        <span onclick="selectionnerPiment(5)" style="filter: ${spiceActuel >= 5 ? 'none' : 'grayscale(100%) opacity(40%)'};">🌶️</span>
+                    </div>
+                    <input type="hidden" id="edit-spice" value="${spiceActuel}">
+                </div>
             </div>
 
             <div class="form-check my-2">
                 <input class="form-check-input" type="checkbox" id="edit-coeur" ${estCoupDeCoeur ? 'checked' : ''}>
                 <label class="form-check-label fw-bold" for="edit-coeur">❤️ Coup de Cœur</label>
+            </div>
+
+            <div class="mb-3">
+                <label class="fw-bold">Citations préférées :</label>
+                <textarea id="edit-citation" class="form-control" rows="2" placeholder="Séparées par un point-virgule (;)">${citation || ''}</textarea>
             </div>
 
             <div class="mb-3">
@@ -632,6 +722,7 @@ function ajouterBlocRelecture() {
 function sauvegarderModification(event, index) {
     event.preventDefault();
 
+    // 🟢 Objet corrigé (attention aux clés et virgules)
     const livreModifie = {
         action: "UPDATE",
         ligne: index + 2,
@@ -650,7 +741,9 @@ function sauvegarderModification(event, index) {
         statut: document.getElementById("edit-statut").value,
         notes: document.getElementById("edit-note").value,
         review: document.getElementById("edit-review").value,
-        coup_de_coeur: document.getElementById("edit-coeur").checked
+        coup_de_coeur: document.getElementById("edit-coeur").checked,
+        spice: document.getElementById("edit-spice").value,          
+        citation: document.getElementById("edit-citation").value.trim() 
     };
 
     fetch(URL_APPS_SCRIPT, {
@@ -677,9 +770,13 @@ function sauvegarderModification(event, index) {
                 tousLesLivres[index][15] = livreModifie.review;
                 tousLesLivres[index][16] = livreModifie.tags;
                 tousLesLivres[index][17] = livreModifie.coup_de_coeur ? "VRAI" : "FAUX";
+                tousLesLivres[index][18] = livreModifie.spice;
+                tousLesLivres[index][19] = livreModifie.citation;
 
                 fermerFicheLivre();
-                chargerLivres();
+                
+                // Actualise immédiatement l'écran sans avoir besoin de refaire une requête réseau
+                changerVue(filtrePersonne); 
             } else {
                 alert("Erreur : " + resultat.message);
             }

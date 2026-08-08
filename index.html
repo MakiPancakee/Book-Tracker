@@ -33,7 +33,6 @@
     <div id="application-principale" class="cache">
 
         <!-- En-tête -->
-        <!-- En-tête -->
         <header class="bg-white border-bottom shadow-sm py-4 mb-4">
             <div class="container text-center">
                 <h1 class="fw-bold mb-2">📚 Le Cercle des Cerveaux Disparus</h1>
@@ -42,7 +41,7 @@
                 <nav class="d-flex justify-content-center gap-2 flex-wrap mb-3">
                     <button class="btn btn-outline-dark" onclick="changerVue('Matide')">Bibliothèque Matide</button>
                     <button class="btn btn-outline-dark" onclick="changerVue('Flaure')">Bibliothèque Flaure</button>
-                    <button class="btn btn-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
+                    <button class="btn btn-outline-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
                     <button class="btn btn-outline-success" onclick="changerVue('PAL')">Pile à lire (PAL)</button>
                     <button class="btn btn-outline-danger fw-bold" onclick="changerVue('CoupsDeCoeur')">❤️ Coups de
                         Cœur</button>
@@ -53,18 +52,53 @@
         <!-- Contenu principal -->
         <main class="container my-4">
 
-            <!-- WIDGETS -->
-            <section id="widgets" class="row mb-4 text-center">
-                <div class="col-md-6 mb-3">
-                    <div class="widget-stat p-3 border-start border-4 border-info">
-                        <h6 class="text-uppercase text-muted fw-bold mb-1">Livres Lus</h6>
-                        <h2 id="stat-lus" class="text-info fw-bold mb-0">0</h2>
+            <!-- WIDGETS STATISTIQUES -->
+            <section id="widgets" class="row mb-4 text-center g-3">
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-info bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Livres Lus</h6>
+                        <h3 id="stat-lus" class="text-info fw-bold mb-0">0</h3>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <div class="widget-stat p-3 border-start border-4 border-success">
-                        <h6 class="text-uppercase text-muted fw-bold mb-1">Budget Total (Réel / Officiel)</h6>
-                        <h2 id="stat-budget" class="text-success fw-bold mb-0">0 € / 0 €</h2>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-success bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Budget (Réel /
+                            Off.)</h6>
+                        <h3 id="stat-budget" class="text-success fw-bold mb-0 fs-5">0 € / 0 €</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-warning bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Pages Lues</h6>
+                        <h3 id="stat-pages" class="text-warning fw-bold mb-0">0</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-primary bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Top Genres</h6>
+                        <div id="stat-genres" class="text-primary fw-bold small text-truncate">Aucun</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WIDGET CITATION ALÉATOIRE -->
+            <section class="row mb-5 justify-content-center">
+                <div class="col-md-10">
+                    <div class="card border-0 bg-dark text-white shadow rounded-4 position-relative overflow-hidden">
+                        <div class="card-body p-4 text-center">
+                            <span class="position-absolute top-0 start-0 opacity-25"
+                                style="font-size: 5rem; line-height: 1; margin: -10px 0 0 10px;">"</span>
+                            <p id="citation-texte" class="fs-5 fst-italic mb-3 position-relative z-index-1">
+                                Sélectionne un profil pour découvrir une citation.
+                            </p>
+                            <div class="d-flex justify-content-center align-items-center gap-2 text-info small">
+                                <span id="citation-source" class="fw-bold"></span>
+                            </div>
+                            <button onclick="afficherCitationAleatoire()"
+                                class="btn btn-sm btn-outline-light mt-3 rounded-pill">
+                                🔄 Autre citation
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -165,6 +199,32 @@
                             <span onclick="selectionnerEtoileCreation(5)" class="text-muted">★</span>
                         </div>
                         <input type="hidden" id="nouveau-note" value="0">
+                    </div>
+
+                    <!-- Sélecteur de Spice -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Niveau de Spice :</label>
+                        <div id="spice-rating-creation" class="fs-3" style="cursor: pointer; user-select: none;">
+                            <span onclick="selectionnerPimentCreation(1)"
+                                style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                            <span onclick="selectionnerPimentCreation(2)"
+                                style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                            <span onclick="selectionnerPimentCreation(3)"
+                                style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                            <span onclick="selectionnerPimentCreation(4)"
+                                style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                            <span onclick="selectionnerPimentCreation(5)"
+                                style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                        </div>
+                        <input type="hidden" id="nouveau-spice" value="0">
+                    </div>
+
+                    <!-- Citations -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Citations préférées :</label>
+                        <textarea id="nouveau-citation" class="form-control" rows="3"
+                            placeholder="Séparez plusieurs citations par un point-virgule (;)"></textarea>
+                        <small class="text-muted">Ex: "My House. My Chair." - Xaden ; Une autre citation ici.</small>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
