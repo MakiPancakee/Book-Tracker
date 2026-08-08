@@ -452,6 +452,22 @@ function choisirProfil(nom) {
     verifierProfil();
 }
 
+function genererEtoiles(note) {
+    const maxEtoiles = 5;
+    let noteNum = parseFloat(note) || 0;
+    let html = "";
+
+    for (let i = 1; i <= maxEtoiles; i++) {
+        if (i <= noteNum) {
+            // Étoile pleine (utilisation de FontAwesome, standard classique)
+            html += '<i class="fas fa-star text-warning"></i>';
+        } else {
+            // Étoile vide
+            html += '<i class="far fa-star text-warning"></i>';
+        }
+    }
+    return html;
+}
 
 /* ============================================================
    7. COMMUNICATION AVEC GOOGLE SHEETS
@@ -521,23 +537,6 @@ function formatStatut(statut) {
         default:
             return statut; // Retourne le statut original s'il ne correspond à aucun cas
     }
-}
-
-function genererEtoiles(note) {
-    const maxEtoiles = 5;
-    let noteNum = parseFloat(note) || 0;
-    let html = "";
-
-    for (let i = 1; i <= maxEtoiles; i++) {
-        if (i <= noteNum) {
-            // Étoile pleine (utilisation de FontAwesome, standard classique)
-            html += '<i class="fas fa-star text-warning"></i>';
-        } else {
-            // Étoile vide
-            html += '<i class="far fa-star text-warning"></i>';
-        }
-    }
-    return html;
 }
 
 /* ============================================================
