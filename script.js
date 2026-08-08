@@ -452,23 +452,6 @@ function choisirProfil(nom) {
     verifierProfil();
 }
 
-function genererEtoiles(note) {
-    const maxEtoiles = 5;
-    let noteNum = parseFloat(note) || 0;
-    let html = "";
-
-    for (let i = 1; i <= maxEtoiles; i++) {
-        if (i <= noteNum) {
-            // Étoile pleine (utilisation de FontAwesome, standard classique)
-            html += '<i class="fas fa-star text-warning"></i>';
-        } else {
-            // Étoile vide
-            html += '<i class="far fa-star text-warning"></i>';
-        }
-    }
-    return html;
-}
-
 /* ============================================================
     6.1. GESTION DES BOUTONS - VUE
 ============================================================ */
@@ -562,6 +545,23 @@ function formatStatut(statut) {
 /* ============================================================
    8. FILTRES
 ============================================================ */
+
+function genererEtoiles(note) {
+    const maxEtoiles = 5;
+    let noteNum = parseFloat(note) || 0;
+    let html = "";
+
+    for (let i = 1; i <= maxEtoiles; i++) {
+        if (i <= noteNum) {
+            // Étoile pleine (utilisation de FontAwesome, standard classique)
+            html += '<i class="fas fa-star text-warning"></i>';
+        } else {
+            // Étoile vide
+            html += '<i class="far fa-star text-warning"></i>';
+        }
+    }
+    return html;
+}
 
 /*
  * Change la vue principale.
