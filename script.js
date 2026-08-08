@@ -407,52 +407,75 @@ function changerLangueAPI(langue, label) {
     document.getElementById("btn-langue-api").innerText = label;
 }
 
+// Variable pour éviter d'envoyer trop de requêtes à la suite
+let timeoutRecherche = null;
+
 function rechercherLivreAPI() {
     const requete = document.getElementById("recherche-api-input").value.trim();
-    if (!requete) return;
+    const conteneur = document.getElementById("resultats-api");
 
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
+    if (!requete) {
+        conteneur.innerHTML = "";
+        return;
+    }
 
-    fetch(url)
-        .then(reponse => reponse.json())
-        .then(donnees => {
-            const conteneur = document.getElementById("resultats-api");
-            conteneur.innerHTML = "";
+    // Si on clique sur le bouton, on nettoie le minuteur précédent
+    if (timeoutRecherche) clearTimeout(timeoutRecherche);
 
-            if (!donnees.items) {
-                conteneur.innerHTML = "<div class='list-group-item text-muted'>Aucun résultat trouvé</div>";
-                return;
-            }
+    // Petit délai de sécurité de 300 millisecondes pour calmer l'API
+    timeoutRecherche = setTimeout(() => {
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
 
-            donnees.items.forEach(item => {
-                const info = item.volumeInfo;
-                const titre = info.title || "";
-                const auteurs = info.authors ? info.authors.join(", ") : "Auteur inconnu";
-                const couverture = info.imageLinks?.thumbnail?.replace("http://", "https://") || "";
-                const pages = info.pageCount || "";
-                const genre = info.categories ? info.categories[0] : "";
+        fetch(url)
+            .then(reponse => {
+                if (reponse.status === 429) {
+                    throw new Error("Trop de requêtes, patiente quelques secondes.");
+                }
+                return reponse.json();
+            })
+            .then(donnees => {
+                conteneur.innerHTML = "";
 
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "list-group-item list-group-item-action d-flex align-items-center gap-2";
-                btn.innerHTML = `
-                    ${couverture ? `<img src="${couverture}" style="height: 40px; width: 28px; object-fit: cover;">` : ''}
-                    <div>
-                        <strong>${titre}</strong> <small class="text-muted">by ${auteurs}</small>
-                    </div>
-                `;
-                btn.onclick = () => {
-                    if (document.getElementById("titre")) document.getElementById("titre").value = titre;
-                    if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
-                    if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
-                    if (document.getElementById("pages")) document.getElementById("pages").value = pages;
-                    if (document.getElementById("genre")) document.getElementById("genre").value = genre;
-                    conteneur.innerHTML = "";
-                };
-                conteneur.appendChild(btn);
+                if (!donnees.items) {
+                    conteneur.innerHTML = "<div class='list-group-item text-muted'>Aucun résultat trouvé</div>";
+                    return;
+                }
+
+                donnees.items.forEach(item => {
+                    const info = item.volumeInfo;
+                    const titre = info.title || "";
+                    const auteurs = info.authors ? info.authors.join(", ") : "Auteur inconnu";
+                    const couverture = info.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+                    const pages = info.pageCount || "";
+                    const genre = info.categories ? info.categories[0] : "";
+
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "list-group-item list-group-item-action d-flex align-items-center gap-2";
+                    btn.innerHTML = `
+                        ${couverture ? `<img src="${couverture}" style="height: 40px; width: 28px; object-fit: cover;">` : ''}
+                        <div>
+                            <strong>${titre}</strong> <small class="text-muted">par ${auteurs}</small>
+                        </div>
+                    `;
+                    btn.onclick = () => {
+                        if (document.getElementById("titre")) document.getElementById("titre").value = titre;
+                        if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
+                        if (document.getElementById("edit-couverture")) document.getElementById("edit-couverture").value = couverture;
+                        // S'adapte aussi si on est dans le formulaire de création
+                        if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
+                        if (document.getElementById("pages")) document.getElementById("pages").pages = pages;
+                        if (document.getElementById("genre")) document.getElementById("genre").value = genre;
+                        conteneur.innerHTML = "";
+                    };
+                    conteneur.appendChild(btn);
+                });
+            })
+            .catch(err => {
+                console.warn(err.message);
+                conteneur.innerHTML = "<div class='list-group-item text-danger'>Patiente 5 secondes avant de relancer une recherche (Erreur 429).</div>";
             });
-        })
-        .catch(err => console.error("Erreur API :", err));
+    }, 300);
 }
 
 /* ========================================================
