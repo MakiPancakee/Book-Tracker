@@ -470,6 +470,26 @@ function genererEtoiles(note) {
 }
 
 /* ============================================================
+    6.1. GESTION DES BOUTONS - VUE
+============================================================ */
+
+const boutonsFiltres = document.querySelectorAll(".btn-filtre");
+
+boutonsFiltres.forEach(bouton => {
+    bouton.addEventListener("click", () => {
+        // 1. Retire le style plein (btn-primary) et remet le contour (btn-outline-primary) sur tous les boutons
+        boutonsFiltres.forEach(b => {
+            b.classList.remove("btn-primary");
+            b.classList.add("btn-outline-primary");
+        });
+
+        // 2. Applique le style plein (btn-primary) uniquement sur le bouton cliqué
+        bouton.classList.remove("btn-outline-primary");
+        bouton.classList.add("btn-primary");
+    });
+});
+
+/* ============================================================
    7. COMMUNICATION AVEC GOOGLE SHEETS
 ============================================================ */
 
