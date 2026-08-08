@@ -533,8 +533,8 @@ function passerEnModeEdition(index) {
             <div class="mb-2"><label class="fw-bold">URL de la couverture :</label><input type="text" id="edit-couverture" class="form-control" value="${couverture || ''}"></div>
 
             <div class="row">
-                <div class="col-md-4 mb-2"><label class="fw-bold">Date début :</label><input type="date" id="edit-date-debut" class="form-control" value="${date_debut || ''}"></div>
-                <div class="col-md-4 mb-2"><label class="fw-bold">Date fin :</label><input type="date" id="edit-date-fin" class="form-control" value="${date_fin || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Date début :</label><input type="text" id="edit-date-debut" class="form-control" value="${date_debut || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Date fin :</label><input type="text" id="edit-date-fin" class="form-control" value="${date_fin || ''}"></div>
                 <div class="col-md-4 mb-2"><label class="fw-bold">Durée :</label><input type="text" id="edit-duree" class="form-control" value="${duree || ''}"></div>
             </div>
 
