@@ -83,7 +83,7 @@ function afficherLivres() {
                             <h6 class="card-subtitle mb-3 text-muted">${auteur}</h6>
                         </div>
                         <div>
-                            <span class="badge bg-light text-dark border">${statut}</span>
+                            <span class="badge bg-light text-dark border">${formatStatut(statut)}</span>
                         </div>
                     </div>
                 </div>
@@ -165,6 +165,20 @@ function selectionnerEtoile(valeur) {
 }
 
 /* ========================================================
+   GESTION DE FORMATAGE DU STATUT
+   ======================================================== */
+
+function formatStatut(statut) {
+    if (!statut) return "-";
+    if (statut.includes("À lire")) return "À lire 📚";
+    if (statut.includes("En cours")) return "En cours 📖";
+    if (statut.includes("Pause")) return "Pause ⏸";
+    if (statut.includes("Terminé")) return "Terminé ✔️";
+    if (statut.includes("Abandonné")) return "Abandonné ❌☠️";
+    return statut;
+}
+
+/* ========================================================
    GESTION DE L'AJOUT D'UN LIVRE
    ======================================================== */
 
@@ -190,7 +204,7 @@ function soumettreLivre(event) {
         body: JSON.stringify(nouveauLivre)
     };
 
-    fetch(URL_APPS_SCRIPT, options)
+c    fetch(URL_APPS_SCRIPT, options)
         .then(reponse => reponse.json())
         .then(resultat => {
             if (resultat.statut === "succès") {
@@ -245,7 +259,7 @@ function ouvrirFicheLivre(index) {
             ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm" alt="Couverture"></div>` : ''}
             <div class="${couverture ? 'col-md-8' : 'col-12'}">
                 <p><strong>Appartient à :</strong> ${personne || "-"}</p>
-                <p><strong>Statut :</strong> ${statut || "-"}</p>
+                <p><strong>Statut :</strong> ${formatStatut(statut)}</p>
                 <p><strong>Genre :</strong> ${genre || "-"} | <strong>Format :</strong> ${format || "-"}</p>
                 <p><strong>Nombre de pages :</strong> ${pages || "-"}</p>
                 <p><strong>Période de lecture :</strong> Du ${date_debut || "?"} au ${date_fin || "?"} (${duree || "-"})</p>
