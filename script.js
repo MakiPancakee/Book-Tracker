@@ -340,20 +340,22 @@ function rechercherLivreAPI() {
     const requete = document.getElementById("recherche-api-input").value.trim();
     const conteneur = document.getElementById("resultats-api");
 
-    if (!requete) {
+    if (!requete || requete.length < 3) { // 👈 On ne cherche pas si moins de 3 caractères
         conteneur.innerHTML = "";
         return;
     }
 
+    // Annule la recherche précédente si l'utilisateur continue de taper
     if (timeoutRecherche) clearTimeout(timeoutRecherche);
 
+    // 🟢 Délai monté à 800ms pour éviter l'erreur 429
     timeoutRecherche = setTimeout(() => {
         const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
 
         fetch(url)
             .then(reponse => {
                 if (reponse.status === 429) {
-                    throw new Error("Trop de requêtes, patiente quelques secondes.");
+                    throw new Error("Quota dépassé, attends 10 secondes.");
                 }
                 return reponse.json();
             })
@@ -396,9 +398,9 @@ function rechercherLivreAPI() {
             })
             .catch(err => {
                 console.warn(err.message);
-                conteneur.innerHTML = "<div class='list-group-item text-danger'>Patiente 5 secondes avant de relancer une recherche (Erreur 429).</div>";
+                conteneur.innerHTML = `<div class='list-group-item text-danger'>⚠️ ${err.message}</div>`;
             });
-    }, 300);
+    }, 800);
 }
 
 /* ========================================================
