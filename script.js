@@ -1,3 +1,18 @@
+// Fonction pour nettoyer un prix et retirer les dates parasites de Google Sheets
+function nettoyerPrix(valeur) {
+    if (!valeur) return "";
+    let str = String(valeur).trim();
+
+    // Si Google Sheets a envoyé une date (contient 'T', 'GMT' ou des tirets de type AAAA-MM-JJ)
+    if (str.includes("T") || str.includes("GMT") || /^\d{4}-\d{2}-\d{2}/.test(str)) {
+        return ""; // Ou met 0 selon ce que tu préfères
+    }
+
+    // Garde uniquement les chiffres, les points et les virgules
+    let prixPropre = str.replace(/[^0-9.,]/g, "");
+    return prixPropre;
+}
+
 /* ========================================================
    VARIABLES GLOBALES ET INITIALISATION
    ======================================================== */
@@ -538,11 +553,24 @@ function passerEnModeEdition(index) {
                 <div class="col-md-4 mb-2"><label class="fw-bold">Durée :</label><input type="text" id="edit-duree" class="form-control" value="${duree || ''}"></div>
             </div>
 
+            <!-- 🟢 GRILLE CORRIGÉE (4 champs x col-md-3 = 12) -->
             <div class="row">
-                <div class="col-md-3 mb-2"><label class="fw-bold">Pages :</label><input type="number" id="edit-pages" class="form-control" value="${pages || ''}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Officiel (€) :</label><input type="text" id="edit-prix-officiel" class="form-control" value="${prix_officiel || ''}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Réel (€) :</label><input type="text" id="edit-prix-reel" class="form-control" value="${prix_reel || ''}"></div>
-                <div class="col-md-3 mb-2"><label class="fw-bold">Format :</label><input type="text" id="edit-format" class="form-control" value="${format || ''}"></div>
+                <div class="col-md-3 mb-2">
+                    <label class="fw-bold">Pages :</label>
+                    <input type="number" id="edit-pages" class="form-control" value="${pages || ''}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="fw-bold">Prix Officiel (€) :</label>
+                    <input type="text" id="edit-prix-officiel" class="form-control" value="${nettoyerPrix(prix_officiel)}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="fw-bold">Prix Réel (€) :</label>
+                    <input type="text" id="edit-prix-reel" class="form-control" value="${nettoyerPrix(prix_reel)}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="fw-bold">Format :</label>
+                    <input type="text" id="edit-format" class="form-control" value="${format || ''}">
+                </div>
             </div>
 
             <div class="row">
