@@ -3,14 +3,22 @@ function nettoyerPrix(valeur) {
     if (!valeur) return "";
     let str = String(valeur).trim();
 
-    // Si Google Sheets a envoyé une date (contient 'T', 'GMT' ou des tirets de type AAAA-MM-JJ)
     if (str.includes("T") || str.includes("GMT") || /^\d{4}-\d{2}-\d{2}/.test(str)) {
         return ""; 
     }
 
-    // Garde uniquement les chiffres, les points et les virgules
     let prixPropre = str.replace(/[^0-9.,]/g, "");
     return prixPropre;
+}
+
+// Fonction pour retirer le tag d'année (ex: 2024, 2025) de la colonne Q
+function nettoyerTagsSansAnnee(tagsStr) {
+    if (!tagsStr) return "";
+    return String(tagsStr)
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => !/^\d{4}$/.test(t) && t !== "")
+        .join(', ');
 }
 
 /* ========================================================
@@ -21,11 +29,13 @@ const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzfXagjnK-neDNf
 let tousLesLivres = [];
 let filtrePersonne = "Commune";
 let filtreStatut = "TOUS";
+let filtreAnnee = "TOUS";
+let filtreGenre = "TOUS";
 let vueCoupDeCoeur = false;
 let carrouselTimer = null;
 let langueAPI = "fr";
 let timeoutRecherche = null;
-let citationsActuelles = []; // Stocke les citations de la vue en cours
+let citationsActuelles = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     verifierProfil();
@@ -60,9 +70,7 @@ function chargerLivres() {
     fetch(URL_APPS_SCRIPT)
         .then(reponse => reponse.json())
         .then(lignes => {
-            tousLesLivres = lignes.slice(1); // Retire la ligne d'en-tête
-            
-            // On lance la vue actuelle, ce qui va filtrer, appeler les widgets puis afficher la grille
+            tousLesLivres = lignes.slice(1);
             changerVue(filtrePersonne); 
             afficherCarousel();
         })
@@ -162,34 +170,74 @@ function changerVue(vueDemandee) {
         vueCoupDeCoeur = false;
     }
 
+    filtreAnnee = "TOUS";
+    filtreGenre = "TOUS";
+
+    appliquerFiltresEtAfficher();
+}
+
+function filtrerParAnnee(annee) {
+    filtreAnnee = annee;
+    appliquerFiltresEtAfficher();
+}
+
+function filtrerParGenre(genre) {
+    filtreGenre = genre;
+    appliquerFiltresEtAfficher();
+}
+
+function obtenirLivresFiltres() {
+    return tousLesLivres.filter(l => {
+        const personne = l[1];
+        const genreStr = l[12] || "";
+        const statut = l[13] || "";
+        const tagsStr = l[16] || "";
+        const estCoupDeCoeur = (l[17] === "VRAI" || l[17] === true);
+
+        const matchPersonne = (filtrePersonne === "Commune" || !filtrePersonne) ? true : (personne === filtrePersonne);
+        const matchStatut = (filtreStatut === "TOUS") ? true : statut.includes(filtreStatut);
+        const matchCoeur = !vueCoupDeCoeur ? true : estCoupDeCoeur;
+
+        // Filtre par année dans les tags (colonne Q) ou dans la date de fin
+        const matchAnnee = (filtreAnnee === "TOUS") ? true : (tagsStr.includes(filtreAnnee) || (l[3] && l[3].includes(filtreAnnee)));
+        
+        // Filtre par genre
+        const matchGenre = (filtreGenre === "TOUS") ? true : genreStr.toLowerCase().includes(filtreGenre.toLowerCase());
+
+        return matchPersonne && matchStatut && matchCoeur && matchAnnee && matchGenre;
+    });
+}
+
+function appliquerFiltresEtAfficher() {
     const sectionCarousel = document.getElementById("section-carousel");
-    if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur) {
+    if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur && filtreAnnee === "TOUS" && filtreGenre === "TOUS") {
         sectionCarousel.style.display = "block";
     } else {
         sectionCarousel.style.display = "none";
     }
 
-    document.getElementById("titre-grille").innerText = vueCoupDeCoeur
-        ? "❤️ Mes Coups de Cœur"
+    let titre = vueCoupDeCoeur 
+        ? "❤️ Mes Coups de Cœur" 
         : (filtreStatut === "À lire" ? "📚 Ma Pile à Lire" : "Ma Bibliothèque");
+    
+    if (filtreAnnee !== "TOUS") titre += ` (${filtreAnnee})`;
+    if (filtreGenre !== "TOUS") titre += ` — ${filtreGenre}`;
 
-    // Filtrage pour les widgets et la grille
-    const livresFiltres = tousLesLivres.filter(l => {
-        const matchPersonne = (filtrePersonne === "Commune" || !filtrePersonne) ? true : (l[1] === filtrePersonne);
-        const matchStatut = (filtreStatut === "TOUS") ? true : (l[13] && l[13].includes(filtreStatut));
-        const matchCoeur = !vueCoupDeCoeur ? true : (l[17] === "VRAI" || l[17] === true);
-        return matchPersonne && matchStatut && matchCoeur;
-    });
+    document.getElementById("titre-grille").innerText = titre;
 
+    const livresFiltres = obtenirLivresFiltres();
     mettreAJourWidgets(livresFiltres);
-    afficherLivres();
+    afficherLivres(livresFiltres);
 }
 
-function afficherLivres() {
+function afficherLivres(livresAAfficher) {
     const grille = document.getElementById("grille-livres");
     grille.innerHTML = "";
 
-    tousLesLivres.forEach((ligne, index) => {
+    const liste = livresAAfficher || obtenirLivresFiltres();
+
+    liste.forEach((ligne) => {
+        const index = tousLesLivres.indexOf(ligne);
         const personne = ligne[1];
         const couverture = ligne[5];
         const titre = ligne[6];
@@ -198,11 +246,6 @@ function afficherLivres() {
         const estCoupDeCoeur = (ligne[17] === "VRAI" || ligne[17] === true);
 
         if (!titre) return;
-
-        // Applique les filtres pour l'affichage
-        if (filtrePersonne !== "Commune" && personne !== filtrePersonne) return;
-        if (filtreStatut === "À lire" && !statut.includes("À lire")) return;
-        if (vueCoupDeCoeur && !estCoupDeCoeur) return;
 
         const coeurCouleur = estCoupDeCoeur ? "❤️" : "🤍";
 
@@ -231,17 +274,25 @@ function afficherLivres() {
 }
 
 /* ========================================================
-   CARROUSEL ANIMÉ
+   CARROUSEL ANIMÉ (5 FLAURE + 5 MATIDE)
    ======================================================== */
 function afficherCarousel() {
     const conteneur = document.getElementById("carousel-livres");
     conteneur.innerHTML = "";
 
-    const livresTermines = tousLesLivres
+    const livresFlaure = tousLesLivres
         .map((livre, index) => ({ livre, index }))
-        .filter(item => item.livre[13] && item.livre[13].includes("Terminé"))
+        .filter(item => item.livre[1] === "Flaure" && item.livre[13] && item.livre[13].includes("Terminé"))
         .reverse()
-        .slice(0, 10);
+        .slice(0, 5);
+
+    const livresMatide = tousLesLivres
+        .map((livre, index) => ({ livre, index }))
+        .filter(item => item.livre[1] === "Matide" && item.livre[13] && item.livre[13].includes("Terminé"))
+        .reverse()
+        .slice(0, 5);
+
+    const livresTermines = [...livresFlaure, ...livresMatide];
 
     livresTermines.forEach(item => {
         const couverture = item.livre[5] || "https://via.placeholder.com/150x220?text=Pas+de+couverture";
@@ -294,7 +345,7 @@ function toggleCoupDeCoeur(event, index) {
     const nouveauStatut = !estCoupDeCoeur;
 
     tousLesLivres[index][17] = nouveauStatut ? "VRAI" : "FAUX";
-    changerVue(filtrePersonne); 
+    appliquerFiltresEtAfficher(); 
 
     fetch(URL_APPS_SCRIPT, {
         method: "POST",
@@ -318,7 +369,7 @@ function toggleCoupDeCoeurPopup(index) {
         spanCoeur.innerText = nouveauStatut ? "❤️" : "🤍";
     }
 
-    changerVue(filtrePersonne);
+    appliquerFiltresEtAfficher();
     afficherCarousel();
 
     fetch(URL_APPS_SCRIPT, {
@@ -414,7 +465,6 @@ function soumettreLivre(event) {
         statut: document.getElementById("statut").value,
         note: document.getElementById("nouveau-note").value,
         coup_de_coeur: document.getElementById("nouveau-coeur").value === "true",
-        // Envoi des nouvelles données si elles existent
         spice: document.getElementById("nouveau-spice") ? document.getElementById("nouveau-spice").value : "0",
         citation: document.getElementById("nouveau-citation") ? document.getElementById("nouveau-citation").value.trim() : ""
     };
@@ -621,6 +671,7 @@ function passerEnModeEdition(index) {
     const noteActuelle = parseInt(notes) || 0;
     const spiceActuel = parseInt(spicy) || 0;
     const estCoupDeCoeur = (coup_de_coeur === "VRAI" || coup_de_coeur === true);
+    const tagsPropres = nettoyerTagsSansAnnee(tags);
 
     const contenuEdit = `
         <form onsubmit="sauvegarderModification(event, ${index})">
@@ -648,7 +699,7 @@ function passerEnModeEdition(index) {
 
             <div class="row">
                 <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>
-                <div class="col-md-6 mb-2"><label class="fw-bold">Tags :</label><input type="text" id="edit-tags" class="form-control" value="${tags || ''}"></div>
+                <div class="col-md-6 mb-2"><label class="fw-bold">Tags :</label><input type="text" id="edit-tags" class="form-control" value="${tagsPropres}"></div>
             </div>
 
             <div class="row">
@@ -722,7 +773,6 @@ function ajouterBlocRelecture() {
 function sauvegarderModification(event, index) {
     event.preventDefault();
 
-    // 🟢 Objet corrigé (attention aux clés et virgules)
     const livreModifie = {
         action: "UPDATE",
         ligne: index + 2,
@@ -774,9 +824,7 @@ function sauvegarderModification(event, index) {
                 tousLesLivres[index][19] = livreModifie.citation;
 
                 fermerFicheLivre();
-                
-                // Actualise immédiatement l'écran sans avoir besoin de refaire une requête réseau
-                changerVue(filtrePersonne); 
+                appliquerFiltresEtAfficher(); 
             } else {
                 alert("Erreur : " + resultat.message);
             }
