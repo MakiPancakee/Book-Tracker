@@ -1378,6 +1378,41 @@ function creerCarteCarousel({ livre, index }) {
 
         </div>
     `;
+    // Récupération automatique des couleurs en fonction du genre du livre
+    const styleGenre = obtenirCouleursGenre(livre.genre);
+
+    const carte = document.createElement("div");
+    carte.className = "col";
+
+    carte.innerHTML = `
+        <div class="card h-100 shadow-sm">
+            ${livre.couverture ? `
+                <img src="${echapperHTML(livre.couverture)}" class="card-img-top" alt="${echapperHTML(livre.titre)}" style="height: 250px; object-fit: cover;">
+            ` : `
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 250px;">Pas d'image</div>
+            `}
+            
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">${echapperHTML(livre.titre)}</h5>
+                <p class="card-text text-muted mb-2"><small>${echapperHTML(livre.auteur)}</small></p>
+                
+                <div class="mt-auto">
+                    <!-- Badge du genre avec application dynamique des couleurs -->
+                    ${livre.genre ? `
+                        <span class="badge mb-2 px-2 py-1" style="background-color: ${styleGenre.bg}; color: ${styleGenre.color};">
+                            ${echapperHTML(livre.genre)}
+                        </span>
+                    ` : ""}
+                    
+                    <p class="card-text mb-0">
+                        <span class="badge bg-secondary">${formatStatut(livre.statut)}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return carte;
 }
 
 
@@ -1672,418 +1707,198 @@ function gererClicOverlay(event) {
 
     }
 }
+/*
+* COULEURS
+*/
+
+function obtenirCouleursGenre(genre) {
+    const correspondances = {
+        "Romantasy": { bg: "#e6e6fa", color: "#b10202" },
+        "Romance": { bg: "#ffabbf", color: "#ffffff" },
+        "Policier": { bg: "#b0c4de", color: "#0d4d77" },
+        "Horreur": { bg: "#2f4f4f", color: "#86c190" },
+        "Dystopie": { bg: "#3e435b", color: "#ffffff" },
+        "Autobiographie": { bg: "#8fbc8f", color: "#ffffff" },
+        "Essai": { bg: "#7b818a", color: "#ffffff" },
+        "Drame": { bg: "#7b818a", color: "#ffffff" },
+        "Bit-lit": { bg: "#008080", color: "#000000" },
+        "Thriller": { bg: "#cd5c5c", color: "#ffffff" },
+        "Historique": { bg: "#f4a460", color: "#000000" },
+        "Cozy": { bg: "#fffacd", color: "#000000" },
+        "Dark-Romance": { bg: "#4a0e4e", color: "#e8b0b0" },
+        "Fantaisie": { bg: "#98ff98", color: "#392323" }
+    };
+
+    // Retourne les couleurs correspondantes ou des valeurs neutres par défaut si non trouvé
+    return correspondances[genre] || { bg: "#e9ecef", color: "#000000" };
+}
+
 
 
 /*
  * Génère le HTML complet du formulaire.
  */
 function creerFormulaireHTML() {
-
     return `
-
-        <div class="card shadow-lg w-100"
-             style="max-width:700px; max-height:95vh; overflow-y:auto;">
-
-            <div class="card-header bg-success text-white
-                        d-flex justify-content-between align-items-center">
-
+        <div class="card shadow-lg w-100" style="max-width:700px; max-height:95vh; overflow-y:auto;">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     Ajouter une nouvelle lecture
                 </h5>
-
-                <button
-                    type="button"
-                    id="btn-fermer-formulaire"
-                    class="btn-close btn-close-white">
-                </button>
-
+                <button type="button" id="btn-fermer-formulaire" class="btn-close btn-close-white"></button>
             </div>
 
-
             <div class="card-body">
-
                 <form id="form-livre">
 
                     <!-- GOOGLE BOOKS -->
-
                     <div class="card bg-light border-0 p-3 mb-3">
-
                         <label class="fw-bold mb-2">
                             🔍 Auto-remplissage via Google Books
                         </label>
-
                         <div class="input-group">
-
-                            <button
-                                class="btn btn-outline-secondary dropdown-toggle"
-                                type="button"
-                                data-bs-toggle="dropdown"
-                                id="btn-langue-api">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="btn-langue-api">
                                 🇫🇷 FR
                             </button>
-
                             <ul class="dropdown-menu">
-
                                 <li>
-                                    <button
-                                        type="button"
-                                        class="dropdown-item"
-                                        data-langue-api="fr">
-                                        🇫🇷 Français
-                                    </button>
+                                    <button type="button" class="dropdown-item" data-langue-api="fr">🇫🇷 Français</button>
                                 </li>
-
                                 <li>
-                                    <button
-                                        type="button"
-                                        class="dropdown-item"
-                                        data-langue-api="en">
-                                        🇺🇸 English
-                                    </button>
+                                    <button type="button" class="dropdown-item" data-langue-api="en">🇺🇸 English</button>
                                 </li>
-
                             </ul>
-
-                            <input
-                                type="text"
-                                id="recherche-api-input"
-                                class="form-control"
-                                placeholder="Titre du livre..."
-                            >
-
-                            <button
-                                type="button"
-                                id="btn-recherche-api"
-                                class="btn btn-primary">
+                            <input type="text" id="recherche-api-input" class="form-control" placeholder="Titre du livre...">
+                            <button type="button" id="btn-recherche-api" class="btn btn-primary">
                                 Chercher
                             </button>
-
                         </div>
-
-                        <div
-                            id="resultats-api"
-                            class="list-group mt-2">
-                        </div>
-
+                        <div id="resultats-api" class="list-group mt-2"></div>
                     </div>
-
 
                     <!-- INFORMATIONS PRINCIPALES -->
-
                     <div class="row">
-
                         <div class="col-md-6 mb-3">
-
-                            <label class="form-label fw-bold">
-                                Titre
-                            </label>
-
-                            <input
-                                type="text"
-                                id="titre"
-                                class="form-control"
-                                required
-                            >
-
+                            <label class="form-label fw-bold">Titre</label>
+                            <input type="text" id="titre" class="form-control" required>
                         </div>
-
                         <div class="col-md-6 mb-3">
-
-                            <label class="form-label fw-bold">
-                                Auteur
-                            </label>
-
-                            <input
-                                type="text"
-                                id="auteur"
-                                class="form-control"
-                                required
-                            >
-
+                            <label class="form-label fw-bold">Auteur</label>
+                            <input type="text" id="auteur" class="form-control" required>
                         </div>
-
                     </div>
-
 
                     <div class="mb-3">
-
-                        <label class="form-label fw-bold">
-                            URL de la couverture
-                        </label>
-
-                        <input
-                            type="text"
-                            id="nouveau-couverture"
-                            class="form-control"
-                        >
-
+                        <label class="form-label fw-bold">URL de la couverture</label>
+                        <input type="text" id="nouveau-couverture" class="form-control">
                     </div>
-
 
                     <div class="row">
-
                         <div class="col-md-4 mb-3">
-
-                            <label class="form-label fw-bold">
-                                Pages
-                            </label>
-
-                            <input
-                                type="number"
-                                id="nouveau-pages"
-                                class="form-control"
-                            >
-
+                            <label class="form-label fw-bold">Pages</label>
+                            <input type="number" id="nouveau-pages" class="form-control">
                         </div>
-
                         <div class="col-md-4 mb-3">
-
-                            <label class="form-label fw-bold">
-                                Prix officiel (€)
-                            </label>
-
-                            <input
-                                type="text"
-                                id="nouveau-prix-officiel"
-                                class="form-control"
-                            >
-
+                            <label class="form-label fw-bold">Prix officiel (€)</label>
+                            <input type="text" id="nouveau-prix-officiel" class="form-control">
                         </div>
-
                         <div class="col-md-4 mb-3">
-
-                            <label class="form-label fw-bold">
-                                Genre
-                            </label>
-
-                            <input
-                                type="text"
-                                id="nouveau-genre"
-                                class="form-control"
-                                placeholder="Fantasy, Romance..."
-                            >
-
+                            <label class="form-label fw-bold">Genre</label>
+                            <select id="nouveau-genre" class="form-select">
+                                <option value="">Sélectionner un genre</option>
+                                <option value="Romantasy" data-bg="#e6e6fa" data-color="#b10202" style="background-color: #e6e6fa; color: #b10202;">Romantasy</option>
+                                <option value="Romance" data-bg="#ffabbf" data-color="#ffffff" style="background-color: #ffabbf; color: #ffffff;">Romance</option>
+                                <option value="Policier" data-bg="#b0c4de" data-color="#0d4d77" style="background-color: #b0c4de; color: #0d4d77;">Policier</option>
+                                <option value="Horreur" data-bg="#2f4f4f" data-color="#86c190" style="background-color: #2f4f4f; color: #86c190;">Horreur</option>
+                                <option value="Dystopie" data-bg="#3e435b" data-color="#ffffff" style="background-color: #3e435b; color: #ffffff;">Dystopie</option>
+                                <option value="Autobiographie" data-bg="#8fbc8f" data-color="#ffffff" style="background-color: #8fbc8f; color: #ffffff;">Autobiographie</option>
+                                <option value="Essai" data-bg="#7b818a" data-color="#ffffff" style="background-color: #7b818a; color: #ffffff;">Essai</option>
+                                <option value="Drame" data-bg="#7b818a" data-color="#ffffff" style="background-color: #7b818a; color: #ffffff;">Drame</option>
+                                <option value="Bit-lit" data-bg="#008080" data-color="#000000" style="background-color: #008080; color: #000000;">Bit-lit</option>
+                                <option value="Thriller" data-bg="#cd5c5c" data-color="#ffffff" style="background-color: #cd5c5c; color: #ffffff;">Thriller</option>
+                                <option value="Historique" data-bg="#f4a460" data-color="#000000" style="background-color: #f4a460; color: #000000;">Historique</option>
+                                <option value="Cozy" data-bg="#fffacd" data-color="#000000" style="background-color: #fffacd; color: #000000;">Cozy</option>
+                                <option value="Dark-Romance" data-bg="#4a0e4e" data-color="#e8b0b0" style="background-color: #4a0e4e; color: #e8b0b0;">Dark-Romance</option>
+                                <option value="Fantaisie" data-bg="#98ff98" data-color="#392323" style="background-color: #98ff98; color: #392323;">Fantaisie</option>
+                            </select>
                         </div>
-
                     </div>
-
 
                     <div class="row border-bottom pb-3 mb-3">
-
                         <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Statut
-                            </label>
-
-                            <select
-                                id="statut"
-                                class="form-select">
-
-                                <option value="À lire">
-                                    À lire 📚
-                                </option>
-
-                                <option value="En cours">
-                                    En cours 📖
-                                </option>
-
-                                <option value="Pause">
-                                    Pause ⏸
-                                </option>
-
-                                <option value="Terminé">
-                                    Terminé ✔️
-                                </option>
-
-                                <option value="Abandonné">
-                                    Abandonné ❌☠️
-                                </option>
-
+                            <label class="form-label fw-bold">Statut</label>
+                            <select id="statut" class="form-select">
+                                <option value="À lire">À lire 📚</option>
+                                <option value="En cours">En cours 📖</option>
+                                <option value="Pause">Pause ⏸</option>
+                                <option value="Terminé">Terminé ✔️</option>
+                                <option value="Abandonné">Abandonné ❌☠️</option>
                             </select>
-
                         </div>
-
-
                         <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Format
-                            </label>
-
-                            <select
-                                id="nouveau-format"
-                                class="form-select">
-
-                                <option value="Physique">
-                                    Physique
-                                </option>
-
-                                <option value="E-Book">
-                                    E-Book
-                                </option>
-
-                                <option value="Audio">
-                                    Audio
-                                </option>
-
+                            <label class="form-label fw-bold">Format</label>
+                            <select id="nouveau-format" class="form-select">
+                                <option value="Physique">Physique</option>
+                                <option value="E-Book">E-Book</option>
+                                <option value="Audio">Audio</option>
                             </select>
-
                         </div>
-
                     </div>
-
 
                     <!-- OPTIONS AVANCÉES -->
-
                     <div id="bloc-avance-creation">
-
                         <div class="row">
-
                             <div class="col-md-6 mb-3">
-
-                                <label class="form-label fw-bold">
-                                    Date de début
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="nouveau-date-debut"
-                                    class="form-control"
-                                    placeholder="JJ/MM/AAAA"
-                                >
-
+                                <label class="form-label fw-bold">Date de début</label>
+                                <input type="text" id="nouveau-date-debut" class="form-control" placeholder="JJ/MM/AAAA">
                             </div>
-
                             <div class="col-md-6 mb-3">
-
-                                <label class="form-label fw-bold">
-                                    Date de fin
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="nouveau-date-fin"
-                                    class="form-control"
-                                    placeholder="JJ/MM/AAAA"
-                                >
-
+                                <label class="form-label fw-bold">Date de fin</label>
+                                <input type="text" id="nouveau-date-fin" class="form-control" placeholder="JJ/MM/AAAA">
                             </div>
-
                         </div>
-
 
                         <div class="row bg-light rounded p-2 mb-3">
-
                             <div class="col-md-4 text-center">
-
-                                <label class="fw-bold">
-                                    Note
-                                </label>
-
-                                <div
-                                    id="star-rating-creation"
-                                    class="fs-4">
-
+                                <label class="fw-bold">Note</label>
+                                <div id="star-rating-creation" class="fs-4">
                                     ${creerEtoilesInteractives()}
-
                                 </div>
-
-                                <input
-                                    type="hidden"
-                                    id="nouveau-note"
-                                    value="0"
-                                >
-
+                                <input type="hidden" id="nouveau-note" value="0">
                             </div>
-
 
                             <div class="col-md-4 text-center border-start border-end">
-
-                                <label class="fw-bold">
-                                    Spice
-                                </label>
-
-                                <div
-                                    id="spice-rating-creation"
-                                    class="fs-4">
-
+                                <label class="fw-bold">Spice</label>
+                                <div id="spice-rating-creation" class="fs-4">
                                     ${creerPimentsInteractifs()}
-
                                 </div>
-
-                                <input
-                                    type="hidden"
-                                    id="nouveau-spice"
-                                    value="0"
-                                >
-
+                                <input type="hidden" id="nouveau-spice" value="0">
                             </div>
-
 
                             <div class="col-md-4 text-center">
-
-                                <label class="fw-bold">
-                                    Coup de cœur
-                                </label>
-
-                                <div
-                                    id="form-coeur-btn"
-                                    class="fs-4"
-                                    style="cursor:pointer;">
-                                    🤍
-                                </div>
-
-                                <input
-                                    type="hidden"
-                                    id="nouveau-coeur"
-                                    value="false"
-                                >
-
+                                <label class="fw-bold">Coup de cœur</label>
+                                <div id="form-coeur-btn" class="fs-4" style="cursor:pointer;">🤍</div>
+                                <input type="hidden" id="nouveau-coeur" value="false">
                             </div>
-
                         </div>
-
 
                         <div class="mb-3">
-
-                            <label class="form-label fw-bold">
-                                Citations préférées
-                            </label>
-
-                            <textarea
-                                id="nouveau-citation"
-                                class="form-control"
-                                rows="2"
-                                placeholder="Séparées par un point-virgule (;)">
-                            </textarea>
-
+                            <label class="form-label fw-bold">Citations préférées</label>
+                            <textarea id="nouveau-citation" class="form-control" rows="2" placeholder="Séparées par un point-virgule (;)"></textarea>
                         </div>
-
                     </div>
 
-
                     <div class="d-flex justify-content-end gap-2">
-
-                        <button
-                            type="button"
-                            id="btn-annuler-formulaire"
-                            class="btn btn-secondary">
+                        <button type="button" id="btn-annuler-formulaire" class="btn btn-secondary">
                             Annuler
                         </button>
-
-                        <button
-                            type="submit"
-                            class="btn btn-success fw-bold">
+                        <button type="submit" class="btn btn-success fw-bold">
                             💾 Ajouter
                         </button>
-
                     </div>
 
                 </form>
-
             </div>
-
         </div>
     `;
 }
@@ -2560,8 +2375,8 @@ function remplirDepuisGoogleBooks(livre) {
     document.getElementById("nouveau-pages").value =
         livre.pages;
 
-    document.getElementById("nouveau-genre").value =
-        livre.genre;
+    // document.getElementById("nouveau-genre").value =
+    //     livre.genre;
 
     // Ajout du remplissage du prix officiel
     document.getElementById("nouveau-prix-officiel").value =
