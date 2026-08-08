@@ -340,67 +340,68 @@ function rechercherLivreAPI() {
     const requete = document.getElementById("recherche-api-input").value.trim();
     const conteneur = document.getElementById("resultats-api");
 
-    if (!requete || requete.length < 3) { // 👈 On ne cherche pas si moins de 3 caractères
+    if (!requete || requete.length < 3) {
         conteneur.innerHTML = "";
         return;
     }
 
-    // Annule la recherche précédente si l'utilisateur continue de taper
-    if (timeoutRecherche) clearTimeout(timeoutRecherche);
+    conteneur.innerHTML = "<div class='list-group-item text-muted'>Recherche en cours...</div>";
 
-    // 🟢 Délai monté à 800ms pour éviter l'erreur 429
-    timeoutRecherche = setTimeout(() => {
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
+    // 🔑 Remplace la chaîne ci-dessous par ta NOUVELLE clé Google
+    const CLE_API = "AIzaSyC6NWy-fhdyj7295-uMW9MTRRdvBwyHtCI"; 
+    
+    // Récupération de la langue sélectionnée (ou 'fr' par défaut)
+    const langueFixe = typeof langueAPI !== 'undefined' ? langueAPI : 'fr';
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueFixe}&maxResults=5&key=${CLE_API}`;
 
-        fetch(url)
-            .then(reponse => {
-                if (reponse.status === 429) {
-                    throw new Error("Quota dépassé, attends 10 secondes.");
-                }
-                return reponse.json();
-            })
-            .then(donnees => {
-                conteneur.innerHTML = "";
+    fetch(url)
+        .then(reponse => {
+            if (!reponse.ok) {
+                if (reponse.status === 429) throw new Error("Quota dépassé ou clé bloquée.");
+                throw new Error("Erreur serveur (" + reponse.status + ")");
+            }
+            return reponse.json();
+        })
+        .then(donnees => {
+            conteneur.innerHTML = "";
 
-                if (!donnees.items) {
-                    conteneur.innerHTML = "<div class='list-group-item text-muted'>Aucun résultat trouvé</div>";
-                    return;
-                }
+            if (!donnees.items || donnees.items.length === 0) {
+                conteneur.innerHTML = "<div class='list-group-item text-muted'>Aucun résultat trouvé</div>";
+                return;
+            }
 
-                donnees.items.forEach(item => {
-                    const info = item.volumeInfo;
-                    const titre = info.title || "";
-                    const auteurs = info.authors ? info.authors.join(", ") : "Auteur inconnu";
-                    const couverture = info.imageLinks?.thumbnail?.replace("http://", "https://") || "";
-                    const pages = info.pageCount || "";
-                    const genre = info.categories ? info.categories[0] : "";
+            donnees.items.forEach(item => {
+                const info = item.volumeInfo;
+                const titre = info.title || "";
+                const auteurs = info.authors ? info.authors.join(", ") : "Auteur inconnu";
+                const couverture = info.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+                const pages = info.pageCount || "";
+                const genre = info.categories ? info.categories[0] : "";
 
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.className = "list-group-item list-group-item-action d-flex align-items-center gap-2";
-                    btn.innerHTML = `
-                        ${couverture ? `<img src="${couverture}" style="height: 40px; width: 28px; object-fit: cover;">` : ''}
-                        <div>
-                            <strong>${titre}</strong> <small class="text-muted">par ${auteurs}</small>
-                        </div>
-                    `;
-                    btn.onclick = () => {
-                        if (document.getElementById("titre")) document.getElementById("titre").value = titre;
-                        if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
-                        if (document.getElementById("edit-couverture")) document.getElementById("edit-couverture").value = couverture;
-                        if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
-                        if (document.getElementById("pages")) document.getElementById("pages").value = pages;
-                        if (document.getElementById("genre")) document.getElementById("genre").value = genre;
-                        conteneur.innerHTML = "";
-                    };
-                    conteneur.appendChild(btn);
-                });
-            })
-            .catch(err => {
-                console.warn(err.message);
-                conteneur.innerHTML = `<div class='list-group-item text-danger'>⚠️ ${err.message}</div>`;
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "list-group-item list-group-item-action d-flex align-items-center gap-2";
+                btn.innerHTML = `
+                    ${couverture ? `<img src="${couverture}" style="height: 40px; width: 28px; object-fit: cover;">` : ''}
+                    <div>
+                        <strong>${titre}</strong> <small class="text-muted">par ${auteurs}</small>
+                    </div>
+                `;
+                btn.onclick = () => {
+                    if (document.getElementById("titre")) document.getElementById("titre").value = titre;
+                    if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
+                    if (document.getElementById("edit-couverture")) document.getElementById("edit-couverture").value = couverture;
+                    if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
+                    if (document.getElementById("pages")) document.getElementById("pages").value = pages;
+                    if (document.getElementById("genre")) document.getElementById("genre").value = genre;
+                    conteneur.innerHTML = "";
+                };
+                conteneur.appendChild(btn);
             });
-    }, 800);
+        })
+        .catch(err => {
+            conteneur.innerHTML = `<div class='list-group-item text-danger'>⚠️ ${err.message}</div>`;
+        });
 }
 
 /* ========================================================
