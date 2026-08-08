@@ -414,7 +414,6 @@ function ouvrirFicheLivre(index) {
     const livreActuel = tousLesLivres[index];
     if (!livreActuel) return;
 
-    // Conversion explicite en String pour éviter les erreurs sur les titres numériques (ex: 1984)
     const titreCible = String(livreActuel[6] || "").trim().toLowerCase();
     const doublons = tousLesLivres.filter(l => String(l[6] || "").trim().toLowerCase() === titreCible);
 
@@ -450,29 +449,28 @@ function ouvrirFicheLivre(index) {
         `).join("");
     }
 
-    // Extraction des données du livre actuel (en prenant en compte tes index de colonnes)
-    // Supposons que l'ordre dans ton tableau `l` est : 
-    // [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, ...]
-    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livreActuel;
+    // Récupération sécurisée depuis le livre actuel (sans re-déclarer avec const)
+    const auteurLivre = livreActuel[7] || "Auteur inconnu";
+    const titreLivre = livreActuel[6] || "Sans titre";
+    const couvertureLivre = livreActuel[5] || "";
+    const dateDebutLivre = livreActuel[2];
+    const dateFinLivre = livreActuel[3];
+    const dureeLivre = livreActuel[4];
 
-    // 🟢 Création d'un affichage intelligent pour les dates / périodes
+    // Gestion propre des dates (si absentes, on affiche l'année ou un message adapté)
     let infoLectureHtml = "";
-    if (date_debut && date_fin) {
-        infoLectureHtml = `<p><strong>Période de lecture :</strong> Du ${date_debut} au ${date_fin} (${duree || "?"} jours)</p>`;
-    } else if (date_debut) {
-        infoLectureHtml = `<p><strong>Date de lecture :</strong> ${date_debut}</p>`;
+    if (dateDebutLivre && dateFinLivre) {
+        infoLectureHtml = `<p><strong>Période de lecture :</strong> Du ${dateDebutLivre} au ${dateFinLivre} (${dureeLivre || "?"} jours)</p>`;
+    } else if (dateDebutLivre) {
+        infoLectureHtml = `<p><strong>Date de lecture :</strong> ${dateDebutLivre}</p>`;
     } else {
-        // Si aucune date précise n'est remplie, on peut afficher une info générique ou masquer
-        infoLectureHtml = `<p><strong>Période :</strong> Lecture passée (année précédente)</p>`;
+        infoLectureHtml = `<p class="text-muted"><em>Lecture passée (dates exactes non renseignées)</em></p>`;
     }
-
-    const auteur = livreActuel[7];
-    const couverture = livreActuel[5];
 
     const contenu = `
         <div class="d-flex justify-content-between align-items-center mb-3 pe-2">
             <div class="d-flex align-items-center gap-3">
-                <h3 class="mb-0 fw-bold">${titre || "Sans titre"}</h3>
+                <h3 class="mb-0 fw-bold">${titreLivre}</h3>
                 <span id="popup-coeur-btn" onclick="toggleCoupDeCoeurPopup(${index})" class="fs-3" style="cursor: pointer; user-select: none;" title="Coup de cœur">
                     ${estCoupDeCoeurGlobal ? "❤️" : "🤍"}
                 </span>
@@ -481,26 +479,26 @@ function ouvrirFicheLivre(index) {
                 <button class="btn btn-outline-primary btn-sm fw-bold" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>
             </div>
         </div>
-        <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
+        <h5 class="text-muted mb-3">${auteurLivre}</h5>
         
         ${doublons.length > 1 ? `<div class="alert alert-info py-2 small">ℹ️ Ce livre est enregistré en <strong>${doublons.length} exemplaires/éditions</strong> (regroupés ici).</div>` : ''}
         
         <hr>
         <div class="row g-4">
-            ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm"></div>` : ''}
-            <div class="${couverture ? 'col-md-8' : 'col-12'}">
+            ${couvertureLivre ? `<div class="col-md-4"><img src="${couvertureLivre}" class="img-fluid rounded shadow-sm"></div>` : ''}
+            <div class="${couvertureLivre ? 'col-md-8' : 'col-12'}">
                 <p><strong>Propriétaires / Lecteurs :</strong> ${Array.from(personnesconcernees).join(", ") || "-"}</p>
                 <p><strong>Formats enregistrés :</strong> ${Array.from(formatsConcernes).join(", ") || "-"}</p>
                 
-                <!-- 🟢 Insertion de notre bloc de date dynamique ici -->
                 ${infoLectureHtml}
 
                 <p><strong>Total pages lues (cumulé) :</strong> ${totalPages} pages</p>
-                <p><strong>Budget total dépensé :</strong> ${totalPrixReel.toFixed(2)} €</p>
+                <p><strong>Budget total dépensé :</strong> ${totalPrixReel.toFixed(2)} € (Officiel : ${totalPrixOfficiel.toFixed(2)} €)</p>
+                <p><strong>Nombre total de lectures :</strong> <span class="badge bg-success">${doublons.length} fois</span></p>
             </div>
         </div>
         <div class="mt-4">
-            <h5 class="fw-bold mb-2">💬 Avis & Relectures :</h5>
+            <h5 class="fw-bold mb-2">💬 Tous les Avis & Relectures pour ce titre :</h5>
             ${avisHtml}
         </div>`;
 
