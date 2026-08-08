@@ -1391,7 +1391,7 @@ function demarrerAutoScrollCarousel() {
 
             }
 
-        }, 3000);
+        }, 2000);
 }
 
 
