@@ -574,9 +574,8 @@ function passerEnModeEdition(index) {
             </div>
 
             <div class="row">
-                <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>`+
-                //<div class="col-md-6 mb-2"><label class="fw-bold">Année :</label><input type="text" id="edit-année" class="form-control" value="${année || ''}"></div>
-            `</div>
+                <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>
+            </div>
 
             <div class="row">
                 <div class="col-md-6 mb-2">
