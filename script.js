@@ -451,58 +451,37 @@ function choisirProfil(nom) {
  * Récupère toutes les données du Google Sheet.
  */
 async function chargerLivres() {
-
     try {
-
         const reponse = await fetch(URL_APPS_SCRIPT);
 
-        /*
-         * On transforme la réponse en JSON.
-         */
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP ${reponse.status}`);
+        }
+
         const lignes = await reponse.json();
 
+        // Vérifie si on a bien un tableau
+        if (!Array.isArray(lignes)) {
+            throw new Error("Les données reçues ne sont pas un tableau valide.");
+        }
 
-        /*
-         * La première ligne du Sheet contient les titres
-         * des colonnes.
-         *
-         * On l'enlève donc avec slice(1).
-         */
         const donnees = lignes.slice(1);
 
+        // Transformation sécurisée pour éviter qu'un livre corrompu bloque tout
+        tousLesLivres = donnees.map((ligne, index) => {
+            try {
+                return convertirLivre(ligne);
+            } catch (e) {
+                console.warn(`Erreur sur la ligne ${index + 1}:`, e);
+                return null; // Ignore la ligne défectueuse au lieu de tout bloquer
+            }
+        }).filter(livre => livre !== null); // Nettoie les nuls
 
-        /*
-         * Chaque ligne devient un objet Livre.
-         *
-         * map signifie :
-         *
-         * "Pour chaque élément du tableau, crée-moi
-         * un nouvel élément."
-         */
-        tousLesLivres = donnees.map(convertirLivre);
-
-
-        /*
-         * Une fois les livres récupérés,
-         * on affiche la vue actuelle.
-         */
         appliquerFiltresEtAfficher();
-
-
-        /*
-         * Et on actualise le carrousel.
-         */
         afficherCarousel();
 
-    }
-
-    catch (erreur) {
-
-        console.error(
-            "Erreur lors du chargement des livres :",
-            erreur
-        );
-
+    } catch (erreur) {
+        console.error("Erreur lors du chargement des livres :", erreur);
         alert(
             "Impossible de charger la bibliothèque.\n\n" +
             "Vérifie ta connexion ou ton Google Apps Script."
