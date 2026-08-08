@@ -117,3 +117,32 @@ main {
 .cache {
     display: none !important;
 }
+
+/* --- WIDGETS --- */
+.widget-stat {
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* --- CARROUSEL --- */
+.carousel-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 15px;
+    padding-bottom: 15px;
+}
+.carousel-container::-webkit-scrollbar {
+    height: 8px;
+}
+.carousel-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+.carousel-card {
+    min-width: 260px;
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    cursor: pointer;
+}

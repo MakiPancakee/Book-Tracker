@@ -33,22 +33,50 @@
     <div id="application-principale" class="cache">
 
         <!-- En-tête -->
+        <!-- En-tête -->
         <header class="bg-white border-bottom shadow-sm py-4 mb-4">
             <div class="container text-center">
                 <h1 class="fw-bold mb-2">📚 Le Cercle des Cerveaux Disparus</h1>
                 <p id="message-bienvenue" class="badge bg-secondary fs-6 fw-normal mb-3"></p>
 
-                <nav class="d-flex justify-content-center gap-2 flex-wrap">
+                <nav class="d-flex justify-content-center gap-2 flex-wrap mb-3">
                     <button class="btn btn-outline-dark" onclick="changerVue('Matide')">Bibliothèque Matide</button>
                     <button class="btn btn-outline-dark" onclick="changerVue('Flaure')">Bibliothèque Flaure</button>
                     <button class="btn btn-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
                     <button class="btn btn-outline-success" onclick="changerVue('PAL')">Pile à lire (PAL)</button>
+                    <button class="btn btn-outline-danger fw-bold" onclick="changerVue('CoupsDeCoeur')">❤️ Coups de
+                        Cœur</button>
                 </nav>
             </div>
         </header>
 
         <!-- Contenu principal -->
         <main class="container my-4">
+
+            <!-- WIDGETS -->
+            <section id="widgets" class="row mb-4 text-center">
+                <div class="col-md-6 mb-3">
+                    <div class="widget-stat p-3 border-start border-4 border-info">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1">Livres Lus</h6>
+                        <h2 id="stat-lus" class="text-info fw-bold mb-0">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="widget-stat p-3 border-start border-4 border-success">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1">Budget Total (Réel / Officiel)</h6>
+                        <h2 id="stat-budget" class="text-success fw-bold mb-0">0 € / 0 €</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CARROUSEL -->
+            <section id="section-carousel" class="mb-5">
+                <h4 class="fw-bold mb-3">✨ Dernières lectures terminées</h4>
+                <div id="carousel-livres" class="carousel-container">
+                    <!-- Généré par JS -->
+                </div>
+            </section>
+
             <div class="row justify-content-center mb-4">
                 <div class="col-md-8 col-lg-6">
                     <button id="btn-ajouter-livre" class="btn btn-success btn-lg w-100 shadow-sm fw-bold"
@@ -58,6 +86,7 @@
                 </div>
             </div>
 
+            <h4 class="fw-bold mb-3" id="titre-grille">Ma Bibliothèque</h4>
             <section id="grille-livres" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 <!-- Les cartes s'insèrent ici -->
             </section>
