@@ -66,7 +66,7 @@ function changerVue(vueDemandee) {
         filtreStatut = "TOUS";
         vueCoupDeCoeur = false;
     }
-    
+
     // 🟢 MASQUAGE DU CARROUSEL : Visible UNIQUEMENT sur la vue "Commune" sans autre filtre actif
     const sectionCarousel = document.getElementById("section-carousel");
     if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur) {
@@ -395,4 +395,263 @@ function sauvegarderModification(event, index) {
                 fermerFicheLivre(); filtreStatut = "TOUS"; chargerLivres(); // Recharge tout pour relancer le carrousel
             } else { alert("Erreur : " + resultat.message); }
         }).catch(erreur => console.error("Erreur :", erreur));
+}
+
+/* ========================================================
+   INTEGRATION API GOOGLE BOOKS (Recherche & Auto-remplissage)
+   ======================================================== */
+let langueAPI = "fr";
+
+function changerLangueAPI(langue, label) {
+    langueAPI = langue;
+    document.getElementById("btn-langue-api").innerText = label;
+}
+
+function rechercherLivreAPI() {
+    const requete = document.getElementById("recherche-api-input").value.trim();
+    if (!requete) return;
+
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
+
+    fetch(url)
+        .then(reponse => reponse.json())
+        .then(donnees => {
+            const conteneur = document.getElementById("resultats-api");
+            conteneur.innerHTML = "";
+
+            if (!donnees.items) {
+                conteneur.innerHTML = "<div class='list-group-item text-muted'>Aucun résultat trouvé</div>";
+                return;
+            }
+
+            donnees.items.forEach(item => {
+                const info = item.volumeInfo;
+                const titre = info.title || "";
+                const auteurs = info.authors ? info.authors.join(", ") : "Auteur inconnu";
+                const couverture = info.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+                const pages = info.pageCount || "";
+                const genre = info.categories ? info.categories[0] : "";
+
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "list-group-item list-group-item-action d-flex align-items-center gap-2";
+                btn.innerHTML = `
+                    ${couverture ? `<img src="${couverture}" style="height: 40px; width: 28px; object-fit: cover;">` : ''}
+                    <div>
+                        <strong>${titre}</strong> <small class="text-muted">by ${auteurs}</small>
+                    </div>
+                `;
+                btn.onclick = () => {
+                    if (document.getElementById("titre")) document.getElementById("titre").value = titre;
+                    if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
+                    if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
+                    if (document.getElementById("pages")) document.getElementById("pages").value = pages;
+                    if (document.getElementById("genre")) document.getElementById("genre").value = genre;
+                    conteneur.innerHTML = "";
+                };
+                conteneur.appendChild(btn);
+            });
+        })
+        .catch(err => console.error("Erreur API :", err));
+}
+
+/* ========================================================
+   AFFICHAGE D'UN LIVRE (Formatage des relectures)
+   ======================================================== */
+function ouvrirFicheLivre(index) {
+    const livre = tousLesLivres[index];
+    if (!livre) return;
+
+    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livre;
+
+    // --- Formatage de l'historique des avis (Relectures) ---
+    let avisHtml = "<p class='text-muted'>Aucun avis enregistré.</p>";
+    if (review) {
+        // Séparation des blocs de relecture basés sur '---'
+        const relectures = review.split("---").filter(r => r.trim() !== "");
+        avisHtml = relectures.map(r => `
+            <div class="border-start border-4 border-primary ps-3 py-2 bg-light rounded mb-2" style="white-space: pre-wrap;">
+                ${r.trim()}
+            </div>
+        `).join("");
+    }
+
+    const contenu = `
+        <div class="d-flex justify-content-between align-items-center mb-3 pe-4">
+            <h3 class="mb-0 fw-bold">${titre || "Sans titre"} ${coup_de_coeur === "VRAI" ? "❤️" : ""}</h3>
+            <button class="btn btn-outline-primary btn-sm fw-bold ms-2" onclick="passerEnModeEdition(${index})">✏️ Modifier tout</button>
+        </div>
+        <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
+        <hr>
+        <div class="row g-4">
+            ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm"></div>` : ''}
+            <div class="${couverture ? 'col-md-8' : 'col-12'}">
+                <p><strong>Appartient à :</strong> ${personne || "-"}</p>
+                <p><strong>Statut :</strong> ${formatStatut(statut)}</p>
+                <p><strong>Format & Genre :</strong> ${format || "-"} | ${genre || "-"}</p>
+                <p><strong>Dates :</strong> Du ${date_debut || "?"} au ${date_fin || "?"} (${duree || "-"})</p>
+                <p><strong>Pages & Prix :</strong> ${pages || "-"} pages — ${prix_reel || "-"} € (Officiel : ${prix_officiel || "-"} €)</p>
+                <p><strong>Tags :</strong> ${tags ? `<span class="badge bg-secondary">${tags}</span>` : "-"}</p>
+                <p class="d-flex align-items-center gap-2"><strong>Note :</strong> ${notes ? genererEtoiles(notes) + ` (${notes}/5)` : "-"}</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <h5 class="fw-bold mb-2">💬 Avis & Historique de Relecture :</h5>
+            ${avisHtml}
+        </div>`;
+
+    document.getElementById("fiche-details").innerHTML = contenu;
+    document.getElementById("modal-fiche").classList.remove("cache");
+}
+
+/* ========================================================
+   MODIFICATION COMPLÈTE DE LA CARTE & BOUTON RELECTURE
+   ======================================================== */
+function passerEnModeEdition(index) {
+    const livre = tousLesLivres[index];
+    if (!livre) return;
+
+    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livre;
+    const noteActuelle = parseInt(notes) || 0;
+    const estCoupDeCoeur = (coup_de_coeur === "VRAI" || coup_de_coeur === true);
+
+    const contenuEdit = `
+        <form onsubmit="sauvegarderModification(event, ${index})">
+            <h4 class="mb-3">Modifier la fiche complète</h4>
+            
+            <div class="row">
+                <div class="col-md-6 mb-2"><label class="fw-bold">Titre :</label><input type="text" id="edit-titre" class="form-control" value="${titre || ''}" required></div>
+                <div class="col-md-6 mb-2"><label class="fw-bold">Auteur :</label><input type="text" id="edit-auteur" class="form-control" value="${auteur || ''}" required></div>
+            </div>
+
+            <div class="mb-2"><label class="fw-bold">URL de la couverture :</label><input type="text" id="edit-couverture" class="form-control" value="${couverture || ''}"></div>
+
+            <div class="row">
+                <div class="col-md-4 mb-2"><label class="fw-bold">Date début :</label><input type="date" id="edit-date-debut" class="form-control" value="${date_debut || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Date fin :</label><input type="date" id="edit-date-fin" class="form-control" value="${date_fin || ''}"></div>
+                <div class="col-md-4 mb-2"><label class="fw-bold">Durée :</label><input type="text" id="edit-duree" class="form-control" value="${duree || ''}"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 mb-2"><label class="fw-bold">Pages :</label><input type="number" id="edit-pages" class="form-control" value="${pages || ''}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Officiel (€) :</label><input type="text" id="edit-prix-officiel" class="form-control" value="${prix_officiel || ''}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Prix Réel (€) :</label><input type="text" id="edit-prix-reel" class="form-control" value="${prix_reel || ''}"></div>
+                <div class="col-md-3 mb-2"><label class="fw-bold">Format :</label><input type="text" id="edit-format" class="form-control" value="${format || ''}"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-2"><label class="fw-bold">Genre :</label><input type="text" id="edit-genre" class="form-control" value="${genre || ''}"></div>
+                <div class="col-md-6 mb-2"><label class="fw-bold">Tags :</label><input type="text" id="edit-tags" class="form-control" value="${tags || ''}"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="fw-bold">Statut :</label>
+                    <select id="edit-statut" class="form-select">
+                        <option value="À lire" ${statut && statut.includes('À lire') ? 'selected' : ''}>À lire 📚</option>
+                        <option value="En cours" ${statut && statut.includes('En cours') ? 'selected' : ''}>En cours 📖</option>
+                        <option value="Pause" ${statut && statut.includes('Pause') ? 'selected' : ''}>Pause ⏸</option>
+                        <option value="Terminé" ${statut && statut.includes('Terminé') ? 'selected' : ''}>Terminé ✔️</option>
+                        <option value="Abandonné" ${statut && statut.includes('Abandonné') ? 'selected' : ''}>Abandonné ❌☠️</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="fw-bold">Note :</label>
+                    <div id="star-rating" class="fs-3" style="cursor: pointer; user-select: none;">
+                        <span onclick="selectionnerEtoile(1)" class="${noteActuelle >= 1 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(2)" class="${noteActuelle >= 2 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(3)" class="${noteActuelle >= 3 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(4)" class="${noteActuelle >= 4 ? 'text-warning' : 'text-muted'}">★</span>
+                        <span onclick="selectionnerEtoile(5)" class="${noteActuelle >= 5 ? 'text-warning' : 'text-muted'}">★</span>
+                    </div>
+                    <input type="hidden" id="edit-note" value="${noteActuelle}">
+                </div>
+            </div>
+
+            <div class="form-check my-2">
+                <input class="form-check-input" type="checkbox" id="edit-coeur" ${estCoupDeCoeur ? 'checked' : ''}>
+                <label class="form-check-label fw-bold" for="edit-coeur">❤️ Coup de Cœur</label>
+            </div>
+
+            <!-- Gestion des avis & relectures -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold">Avis & Historique :</label>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="ajouterBlocRelecture()">+ Ajouter une relecture</button>
+                </div>
+                <textarea id="edit-review" class="form-control" rows="4">${review || ''}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" onclick="ouvrirFicheLivre(${index})">Annuler</button>
+                <button type="submit" class="btn btn-success">💾 Tout Enregistrer</button>
+            </div>
+        </form>`;
+
+    document.getElementById("fiche-details").innerHTML = contenuEdit;
+}
+
+function ajouterBlocRelecture() {
+    const champTexte = document.getElementById("edit-review");
+    const dateAujourdhui = new Date().toLocaleDateString("fr-FR");
+    champTexte.value += `\n\n--- 🔄 Relecture du ${dateAujourdhui} ---\n`;
+}
+
+function sauvegarderModification(event, index) {
+    event.preventDefault();
+
+    const livreModifie = {
+        action: "UPDATE",
+        ligne: index + 2,
+        titre: document.getElementById("edit-titre").value,
+        auteur: document.getElementById("edit-auteur").value,
+        couverture: document.getElementById("edit-couverture").value,
+        date_debut: document.getElementById("edit-date-debut").value,
+        date_fin: document.getElementById("edit-date-fin").value,
+        duree: document.getElementById("edit-duree").value,
+        pages: document.getElementById("edit-pages").value,
+        prix_officiel: document.getElementById("edit-prix-officiel").value,
+        prix_reel: document.getElementById("edit-prix-reel").value,
+        format: document.getElementById("edit-format").value,
+        genre: document.getElementById("edit-genre").value,
+        tags: document.getElementById("edit-tags").value,
+        statut: document.getElementById("edit-statut").value,
+        notes: document.getElementById("edit-note").value,
+        review: document.getElementById("edit-review").value,
+        coup_de_coeur: document.getElementById("edit-coeur").checked
+    };
+
+    fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(livreModifie)
+    })
+        .then(reponse => reponse.json())
+        .then(resultat => {
+            if (resultat.statut === "succès") {
+                // Mise à jour locale du tableau
+                tousLesLivres[index][2] = livreModifie.date_debut;
+                tousLesLivres[index][3] = livreModifie.date_fin;
+                tousLesLivres[index][4] = livreModifie.duree;
+                tousLesLivres[index][5] = livreModifie.couverture;
+                tousLesLivres[index][6] = livreModifie.titre;
+                tousLesLivres[index][7] = livreModifie.auteur;
+                tousLesLivres[index][8] = livreModifie.pages;
+                tousLesLivres[index][9] = livreModifie.prix_officiel;
+                tousLesLivres[index][10] = livreModifie.prix_reel;
+                tousLesLivres[index][11] = livreModifie.format;
+                tousLesLivres[index][12] = livreModifie.genre;
+                tousLesLivres[index][13] = livreModifie.statut;
+                tousLesLivres[index][14] = livreModifie.notes;
+                tousLesLivres[index][15] = livreModifie.review;
+                tousLesLivres[index][16] = livreModifie.tags;
+                tousLesLivres[index][17] = livreModifie.coup_de_coeur ? "VRAI" : "FAUX";
+
+                fermerFicheLivre();
+                chargerLivres();
+            } else {
+                alert("Erreur : " + resultat.message);
+            }
+        })
+        .catch(erreur => console.error("Erreur :", erreur));
 }

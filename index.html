@@ -103,6 +103,26 @@
             </div>
             <div class="card-body">
                 <form id="form-livre">
+                    <!-- À insérer tout en haut du <form id="form-livre"> dans la modale d'ajout -->
+                    <div class="card bg-light p-3 mb-3 border-0">
+                        <label class="fw-bold mb-1">🔍 Auto-remplissage via Google Books</label>
+                        <div class="input-group mb-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="btn-langue-api"
+                                data-bs-toggle="dropdown">🇫🇷 FR</button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="changerLangueAPI('fr', '🇫🇷 FR')">🇫🇷
+                                        Français</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="changerLangueAPI('en', '🇺🇸 EN')">🇺🇸 /
+                                        🇬🇧 Anglais</a></li>
+                            </ul>
+                            <input type="text" id="recherche-api-input" class="form-control"
+                                placeholder="Titre du livre...">
+                            <button class="btn btn-primary" type="button"
+                                onclick="rechercherLivreAPI()">Chercher</button>
+                        </div>
+                        <div id="resultats-api" class="list-group position-relative"
+                            style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
                     <div class="mb-3">
                         <label for="titre" class="form-label fw-bold">Titre du livre :</label>
                         <input type="text" id="titre" class="form-control" placeholder="ex: Fourth Wing" required>
