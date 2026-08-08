@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Le Cercle des Cerveaux Disparus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-light">
+
+    <!-- ÉCRAN 1 : CHOIX DU PROFIL -->
+    <div id="ecran-profil"
+        class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75"
+        style="z-index: 1050;">
+        <div class="card shadow-lg p-4 text-center" style="max-width: 400px; width: 90%;">
+            <div class="card-body">
+                <h2 class="card-title mb-3">Qui es-tu ?</h2>
+                <p class="card-text text-muted mb-4">Choisis ton profil pour accéder à la bibliothèque.</p>
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-danger btn-lg fw-bold" onclick="choisirProfil('Matide')">😈 Matide 😈</button>
+                    <button class="btn btn-outline-primary btn-lg fw-bold" onclick="choisirProfil('Flaure')">😻 Flaure 😻</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 2 : L'APPLICATION PRINCIPALE -->
+    <div id="application-principale" class="cache">
+
+        <header class="bg-white border-bottom shadow-sm py-4 mb-4">
+            <div class="container text-center">
+                <h1 class="fw-bold mb-2">📚 Le Cercle des Cerveaux Disparus</h1>
+                <p id="message-bienvenue" class="badge bg-secondary fs-6 fw-normal mb-3"></p>
+
+                <nav class="d-flex justify-content-center gap-2 flex-wrap mb-3">
+                    <button class="btn btn-outline-dark" onclick="changerVue('Matide')">Bibliothèque Matide</button>
+                    <button class="btn btn-outline-dark" onclick="changerVue('Flaure')">Bibliothèque Flaure</button>
+                    <button class="btn btn-outline-dark" onclick="changerVue('Commune')">Bibliothèque Commune</button>
+                    <button class="btn btn-outline-success" onclick="changerVue('PAL')">Pile à lire (PAL)</button>
+                    <button class="btn btn-outline-danger fw-bold" onclick="changerVue('CoupsDeCoeur')">❤️ Coups de Cœur</button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="container my-4">
+            <section id="widgets" class="row mb-4 text-center g-3">
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-info bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Livres Lus</h6>
+                        <h3 id="stat-lus" class="text-info fw-bold mb-0">0</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-success bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Budget (Réel / Off.)</h6>
+                        <h3 id="stat-budget" class="text-success fw-bold mb-0 fs-5">0 € / 0 €</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-warning bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Pages Lues</h6>
+                        <h3 id="stat-pages" class="text-warning fw-bold mb-0">0</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="widget-stat p-3 border-start border-4 border-primary bg-white shadow-sm rounded">
+                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.8rem;">Top Genres</h6>
+                        <div id="stat-genres" class="text-primary fw-bold small text-truncate">Aucun</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="row mb-5 justify-content-center">
+                <div class="col-md-10">
+                    <div class="card border-0 bg-dark text-white shadow rounded-4 position-relative overflow-hidden">
+                        <div class="card-body p-4 text-center">
+                            <span class="position-absolute top-0 start-0 opacity-25" style="font-size: 5rem; line-height: 1; margin: -10px 0 0 10px;">"</span>
+                            <p id="citation-texte" class="fs-5 fst-italic mb-3 position-relative z-index-1">
+                                Sélectionne un profil pour découvrir une citation.
+                            </p>
+                            <div class="d-flex justify-content-center align-items-center gap-2 text-info small">
+                                <span id="citation-source" class="fw-bold"></span>
+                            </div>
+                            <button onclick="afficherCitationAleatoire()" class="btn btn-sm btn-outline-light mt-3 rounded-pill">
+                                🔄 Autre citation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-carousel" class="mb-5">
+                <h4 class="fw-bold mb-3">✨ Dernières lectures terminées</h4>
+                <div id="carousel-livres" class="carousel-container"></div>
+            </section>
+
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8 col-lg-6">
+                    <button id="btn-ajouter-livre" class="btn btn-success btn-lg w-100 shadow-sm fw-bold" onclick="ouvrirFormulaire()">
+                        + Ajouter un livre
+                    </button>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3" id="titre-grille">Ma Bibliothèque</h4>
+            <section id="grille-livres" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"></section>
+        </main>
+    </div>
+
+    <!-- ÉCRAN 3 : FORMULAIRE D'AJOUT RÉAGENCÉ -->
+    <div id="modal-formulaire"
+        class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75 cache"
+        style="z-index: 1050; padding: 15px;">
+        <div class="card shadow-lg w-100 position-relative" style="max-width: 700px; max-height: 95vh; overflow-y: auto;">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center sticky-top">
+                <h5 class="card-title mb-0">Ajouter une nouvelle lecture</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="fermerFormulaire()"></button>
+            </div>
+            
+            <div class="card-body">
+                <form id="form-livre">
+                    <!-- Section API (Toujours visible) -->
+                    <div class="card bg-light p-3 mb-3 border-0">
+                        <label class="fw-bold mb-1">🔍 Auto-remplissage via Google Books</label>
+                        <div class="input-group mb-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="btn-langue-api" data-bs-toggle="dropdown">🇫🇷 FR</button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="changerLangueAPI('fr', '🇫🇷 FR')">🇫🇷 Français</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="changerLangueAPI('en', '🇺🇸 EN')">🇺🇸 / 🇬🇧 English</a></li>
+                            </ul>
+                            <input type="text" id="recherche-api-input" class="form-control" placeholder="Titre du livre...">
+                            <button class="btn btn-primary" type="button" onclick="rechercherLivreAPI()">Chercher</button>
+                        </div>
+                        <div id="resultats-api" class="list-group position-relative" style="max-height: 180px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- Infos de Base (Toujours visibles) -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="titre" class="form-label fw-bold">Titre :</label>
+                            <input type="text" id="titre" class="form-control" placeholder="ex: Fourth Wing" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="auteur" class="form-label fw-bold">Auteur :</label>
+                            <input type="text" id="auteur" class="form-control" placeholder="ex: Rebecca Yarros" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">URL de la couverture :</label>
+                        <input type="text" id="nouveau-couverture" class="form-control" placeholder="https://...">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Nombre de pages :</label>
+                            <input type="number" id="nouveau-pages" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Prix Officiel (€) :</label>
+                            <input type="text" id="nouveau-prix-officiel" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Genre :</label>
+                            <input type="text" id="nouveau-genre" class="form-control" placeholder="Fantasy, Romance...">
+                        </div>
+                    </div>
+
+                    <div class="row border-bottom pb-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="statut" class="form-label fw-bold">Statut :</label>
+                            <select id="statut" class="form-select" onchange="gererAffichageCreation()">
+                                <option value="À lire" selected>À lire 📚</option>
+                                <option value="En cours">En cours 📖</option>
+                                <option value="Pause">Pause ⏸</option>
+                                <option value="Terminé">Terminé ✔️</option>
+                                <option value="Abandonné">Abandonné ❌☠️</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Format :</label>
+                            <select id="nouveau-format" class="form-select">
+                                <option value="Physique">Physique</option>
+                                <option value="E-Book">E-Book</option>
+                                <option value="Audio">Audio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Options Avancées (Masquées si "À lire") -->
+                    <div id="bloc-avancé-creation" class="cache">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Date de début :</label>
+                                <input type="text" id="nouveau-date-debut" class="form-control" placeholder="JJ/MM/AAAA">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Date de fin :</label>
+                                <input type="text" id="nouveau-date-fin" class="form-control" placeholder="JJ/MM/AAAA">
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center bg-light rounded p-2 mb-3 mx-0">
+                            <div class="col-md-4 text-center">
+                                <label class="form-label fw-bold mb-1">Note :</label>
+                                <div id="star-rating-creation" class="fs-4" style="cursor: pointer; user-select: none;">
+                                    <span onclick="selectionnerEtoileCreation(1)" class="text-muted">★</span>
+                                    <span onclick="selectionnerEtoileCreation(2)" class="text-muted">★</span>
+                                    <span onclick="selectionnerEtoileCreation(3)" class="text-muted">★</span>
+                                    <span onclick="selectionnerEtoileCreation(4)" class="text-muted">★</span>
+                                    <span onclick="selectionnerEtoileCreation(5)" class="text-muted">★</span>
+                                </div>
+                                <input type="hidden" id="nouveau-note" value="0">
+                            </div>
+                            <div class="col-md-4 text-center border-start border-end">
+                                <label class="form-label fw-bold mb-1">Spice :</label>
+                                <div id="spice-rating-creation" class="fs-4" style="cursor: pointer; user-select: none;">
+                                    <span onclick="selectionnerPimentCreation(1)" style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                                    <span onclick="selectionnerPimentCreation(2)" style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                                    <span onclick="selectionnerPimentCreation(3)" style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                                    <span onclick="selectionnerPimentCreation(4)" style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                                    <span onclick="selectionnerPimentCreation(5)" style="filter: grayscale(100%) opacity(40%);">🌶️</span>
+                                </div>
+                                <input type="hidden" id="nouveau-spice" value="0">
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <label class="form-label fw-bold mb-1">Coup de cœur :</label>
+                                <div>
+                                    <span id="form-coeur-btn" onclick="toggleCoeurFormulaire()" class="fs-4" style="cursor: pointer; user-select: none;">🤍</span>
+                                    <input type="hidden" id="nouveau-coeur" value="false">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Citations préférées :</label>
+                            <textarea id="nouveau-citation" class="form-control" rows="2" placeholder="Séparées par un point-virgule (;)"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-secondary" onclick="fermerFormulaire()">Annuler</button>
+                        <button type="submit" class="btn btn-success fw-bold">💾 Ajouter le livre</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- POP-UP : FICHE DÉTAILLÉE DU LIVRE -->
+    <div id="modal-fiche" class="cache"
+        style="position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.75); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div class="card shadow-lg p-4 bg-white position-relative" style="max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; border-radius: 12px;">
+            <div id="fiche-details"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
