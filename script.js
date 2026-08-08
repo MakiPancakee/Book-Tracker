@@ -39,7 +39,7 @@ let filtreStatut = "TOUS";
    ======================================================== */
 
 function chargerLivres() {
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzfXagjnK-neDNfzMODyiTqx2wfgYDxIJTkvx5Ij-Ly_CdC4U27oBpnuqsxYVu0ZtSfyQ/exec";
 
     fetch(URL_APPS_SCRIPT)
         .then(reponse => reponse.json())
@@ -182,7 +182,7 @@ function soumettreLivre(event) {
         note: document.getElementById("nouveau-note").value
     };
 
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyFlu8ZuK_k-YPKbcjfQLt95iE8U9mKq_kN-ZfE9xuz47tsbJAh4150k8vUkZyXTHDNYA/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzfXagjnK-neDNfzMODyiTqx2wfgYDxIJTkvx5Ij-Ly_CdC4U27oBpnuqsxYVu0ZtSfyQ/exec";
 
     const options = {
         method: "POST",
