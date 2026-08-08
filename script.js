@@ -3999,7 +3999,7 @@ function passerEnModeEdition(index) {
         return echapperHTML(valeur);
     }
 
-
+}
 /* ============================================================
    FIN DU SCRIPT
 ============================================================ */
