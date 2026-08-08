@@ -261,7 +261,7 @@ function afficherLivres(livresAAfficher) {
 }
 
 /* ========================================================
-   CARROUSEL ANIMÉ (5 FLAURE + 5 MATIDE)
+   CARROUSEL ANIMÉ
    ======================================================== */
 function afficherCarousel() {
     const conteneur = document.getElementById("carousel-livres");
@@ -380,10 +380,24 @@ function toggleCoeurFormulaire() {
 }
 
 /* ========================================================
-   GESTION DU FORMULAIRE D'AJOUT ET ÉTOILES
+   GESTION DU FORMULAIRE D'AJOUT DYNAMIQUE
    ======================================================== */
+function gererAffichageCreation() {
+    const statutSelect = document.getElementById("statut");
+    const blocAvance = document.getElementById("bloc-avancé-creation");
+    
+    if (statutSelect && blocAvance) {
+        if (statutSelect.value === "À lire") {
+            blocAvance.classList.add("cache");
+        } else {
+            blocAvance.classList.remove("cache");
+        }
+    }
+}
+
 function ouvrirFormulaire() {
     document.getElementById("modal-formulaire").classList.remove("cache");
+    gererAffichageCreation(); // Mise à jour de l'affichage selon le statut actuel
 }
 
 function fermerFormulaire() {
@@ -407,6 +421,8 @@ function fermerFormulaire() {
     if (document.getElementById("form-coeur-btn")) {
         document.getElementById("form-coeur-btn").innerText = "🤍";
     }
+    
+    gererAffichageCreation();
 }
 
 function selectionnerEtoileCreation(valeur) {
@@ -449,7 +465,14 @@ function soumettreLivre(event) {
         personne: localStorage.getItem("utilisateurActif"),
         titre: document.getElementById("titre").value,
         auteur: document.getElementById("auteur").value,
+        couverture: document.getElementById("nouveau-couverture") ? document.getElementById("nouveau-couverture").value : "",
+        pages: document.getElementById("nouveau-pages") ? document.getElementById("nouveau-pages").value : "",
+        prix_officiel: document.getElementById("nouveau-prix-officiel") ? nettoyerPrix(document.getElementById("nouveau-prix-officiel").value) : "",
+        genre: document.getElementById("nouveau-genre") ? document.getElementById("nouveau-genre").value : "",
+        format: document.getElementById("nouveau-format") ? document.getElementById("nouveau-format").value : "Physique",
         statut: document.getElementById("statut").value,
+        date_debut: document.getElementById("nouveau-date-debut") ? document.getElementById("nouveau-date-debut").value : "",
+        date_fin: document.getElementById("nouveau-date-fin") ? document.getElementById("nouveau-date-fin").value : "",
         note: document.getElementById("nouveau-note").value,
         coup_de_coeur: document.getElementById("nouveau-coeur").value === "true",
         spice: document.getElementById("nouveau-spice") ? document.getElementById("nouveau-spice").value : "0",
@@ -532,10 +555,10 @@ function rechercherLivreAPI() {
                 btn.onclick = () => {
                     if (document.getElementById("titre")) document.getElementById("titre").value = titre;
                     if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
+                    if (document.getElementById("nouveau-couverture")) document.getElementById("nouveau-couverture").value = couverture;
                     if (document.getElementById("edit-couverture")) document.getElementById("edit-couverture").value = couverture;
-                    if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
-                    if (document.getElementById("pages")) document.getElementById("pages").value = pages;
-                    if (document.getElementById("genre")) document.getElementById("genre").value = genre;
+                    if (document.getElementById("nouveau-pages")) document.getElementById("nouveau-pages").value = pages;
+                    if (document.getElementById("nouveau-genre")) document.getElementById("nouveau-genre").value = genre;
                     conteneur.innerHTML = "";
                 };
                 conteneur.appendChild(btn);
