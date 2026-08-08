@@ -48,8 +48,11 @@ function chargerLivres() {
         .catch(erreur => console.error("Erreur chargement :", erreur));
 }
 
+// Variable globale pour gérer le minuteur du carrousel
+let carrouselTimer = null;
+
 /* ========================================================
-   AFFICHAGE ET FILTRES (CARTES + WIDGETS)
+   AFFICHAGE ET FILTRES (Règle du carrousel appliquée)
    ======================================================== */
 function changerVue(vueDemandee) {
     if (vueDemandee === "PAL") {
@@ -60,10 +63,18 @@ function changerVue(vueDemandee) {
         filtreStatut = "TOUS";
     } else {
         filtrePersonne = vueDemandee;
-        filtreStatut = "TOUS"; // 🟢 CORRECTIF : Retire la PAL si on clique sur Matide/Flaure/Commune
+        filtreStatut = "TOUS";
         vueCoupDeCoeur = false;
     }
     
+    // 🟢 MASQUAGE DU CARROUSEL : Visible UNIQUEMENT sur la vue "Commune" sans autre filtre actif
+    const sectionCarousel = document.getElementById("section-carousel");
+    if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur) {
+        sectionCarousel.style.display = "block";
+    } else {
+        sectionCarousel.style.display = "none";
+    }
+
     document.getElementById("titre-grille").innerText = vueCoupDeCoeur ? "❤️ Mes Coups de Cœur" : (filtreStatut === "À lire" ? "📚 Ma Pile à Lire" : "Ma Bibliothèque");
     afficherLivres();
 }
@@ -103,7 +114,7 @@ function afficherLivres() {
 
         // --- AFFICHAGE DE LA CARTE ---
         const coeurCouleur = estCoupDeCoeur ? "❤️" : "🤍";
-        
+
         const carteHtml = `
             <div class="col">
                 <div class="card h-100 shadow-sm border-0 position-relative" onclick="ouvrirFicheLivre(${index})" style="cursor: pointer;">
@@ -136,15 +147,14 @@ function afficherLivres() {
 }
 
 /* ========================================================
-   CARROUSEL DES 10 DERNIERS LIVRES TERMINÉS
+   CARROUSEL ANIMÉ ET COMPACT
    ======================================================== */
 function afficherCarousel() {
     const conteneur = document.getElementById("carousel-livres");
     conteneur.innerHTML = "";
 
-    // Filtrer les livres "Terminé", puis prendre les 10 derniers (en inversant l'ordre)
     const livresTermines = tousLesLivres
-        .map((livre, index) => ({ livre, index })) // On garde l'index original pour la popup
+        .map((livre, index) => ({ livre, index }))
         .filter(item => item.livre[13] && item.livre[13].includes("Terminé"))
         .reverse()
         .slice(0, 10);
@@ -157,14 +167,14 @@ function afficherCarousel() {
 
         const html = `
             <div class="card carousel-card shadow-sm border-0" onclick="ouvrirFicheLivre(${item.index})">
-                <div class="row g-0 h-100">
-                    <div class="col-5">
-                        <img src="${couverture}" class="img-fluid rounded-start h-100" style="object-fit: cover;">
+                <div class="row g-0 h-100 align-items-center">
+                    <div class="col-4">
+                        <img src="${couverture}" class="img-fluid rounded-start" alt="Couverture">
                     </div>
-                    <div class="col-7">
-                        <div class="card-body p-2 d-flex flex-column justify-content-center h-100">
-                            <h6 class="fw-bold mb-1 text-truncate" title="${titre}">${titre}</h6>
-                            <small class="text-muted mb-2">${auteur}</small>
+                    <div class="col-8">
+                        <div class="card-body p-2">
+                            <h6 class="fw-bold mb-0 text-truncate" style="font-size: 0.8rem;" title="${titre}">${titre}</h6>
+                            <small class="text-muted d-block text-truncate mb-1" style="font-size: 0.75rem;">${auteur}</small>
                             <div>${genererEtoiles(note)}</div>
                         </div>
                     </div>
@@ -173,7 +183,28 @@ function afficherCarousel() {
         `;
         conteneur.innerHTML += html;
     });
+
+    // 🟢 DÉMARRAGE DE L'ANIMATION AUTOMATIQUE
+    demarrerAutoScrollCarousel();
 }
+
+function demarrerAutoScrollCarousel() {
+    const conteneur = document.getElementById("carousel-livres");
+    if (carrouselTimer) clearInterval(carrouselTimer);
+
+    // Défile de 200px toutes les 3 secondes
+    carrouselTimer = setInterval(() => {
+        if (!conteneur) return;
+
+        // Si on atteint la fin du carrousel, on revient au début
+        if (conteneur.scrollLeft + conteneur.clientWidth >= conteneur.scrollWidth - 10) {
+            conteneur.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            conteneur.scrollBy({ left: 202, behavior: 'smooth' });
+        }
+    }, 3000);
+}
+
 
 /* ========================================================
    GESTION DU COUP DE COEUR (Enregistrement)
@@ -186,7 +217,7 @@ function toggleCoupDeCoeur(event, index) {
 
     // Mise à jour visuelle instantanée
     tousLesLivres[index][17] = nouveauStatut ? "VRAI" : "FAUX";
-    afficherLivres(); 
+    afficherLivres();
 
     // Envoi à Google Sheets
     fetch(URL_APPS_SCRIPT, {
@@ -201,7 +232,6 @@ function toggleCoupDeCoeur(event, index) {
 }
 
 /* ========================================================
-   (LE RESTE DU CODE NE CHANGE PAS)
    Outils, Étoiles, Formulaires et Fiches
    ======================================================== */
 
@@ -224,19 +254,10 @@ function genererEtoiles(note) {
     return html;
 }
 
-function ouvrirFormulaire() { document.getElementById("modal-formulaire").classList.remove("cache"); }
-
-function fermerFormulaire() {
-    document.getElementById("modal-formulaire").classList.add("cache");
-    document.getElementById("form-livre").reset();
-    document.getElementById("nouveau-note").value = "0";
-    document.querySelectorAll('#star-rating-creation span').forEach(e => { e.classList.remove('text-warning'); e.classList.add('text-muted'); });
-}
-
 function selectionnerEtoileCreation(valeur) {
     document.getElementById('nouveau-note').value = valeur;
     document.querySelectorAll('#star-rating-creation span').forEach((e, i) => {
-        if (i < valeur) { e.classList.remove('text-muted'); e.classList.add('text-warning'); } 
+        if (i < valeur) { e.classList.remove('text-muted'); e.classList.add('text-warning'); }
         else { e.classList.remove('text-warning'); e.classList.add('text-muted'); }
     });
 }
@@ -244,9 +265,22 @@ function selectionnerEtoileCreation(valeur) {
 function selectionnerEtoile(valeur) {
     document.getElementById('edit-note').value = valeur;
     document.querySelectorAll('#star-rating span').forEach((e, i) => {
-        if (i < valeur) { e.classList.remove('text-muted'); e.classList.add('text-warning'); } 
+        if (i < valeur) { e.classList.remove('text-muted'); e.classList.add('text-warning'); }
         else { e.classList.remove('text-warning'); e.classList.add('text-muted'); }
     });
+}
+
+function ouvrirFormulaire() { document.getElementById("modal-formulaire").classList.remove("cache"); }
+
+/* ========================================================
+   SOUMISSION ET RÉINITIALISATION DU FORMULAIRE
+   ======================================================== */
+function fermerFormulaire() {
+    document.getElementById("modal-formulaire").classList.add("cache");
+    document.getElementById("form-livre").reset();
+    document.getElementById("nouveau-note").value = "0";
+    document.getElementById("nouveau-coeur").checked = false; // 🟢 Réinitialise la case
+    document.querySelectorAll('#star-rating-creation span').forEach(e => { e.classList.remove('text-warning'); e.classList.add('text-muted'); });
 }
 
 function soumettreLivre(event) {
@@ -258,13 +292,14 @@ function soumettreLivre(event) {
         titre: document.getElementById("titre").value,
         auteur: document.getElementById("auteur").value,
         statut: document.getElementById("statut").value,
-        note: document.getElementById("nouveau-note").value
+        note: document.getElementById("nouveau-note").value,
+        coup_de_coeur: document.getElementById("nouveau-coeur").checked // 🟢 Récupère l'état de la case
     };
 
     fetch(URL_APPS_SCRIPT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(nouveauLivre) })
         .then(reponse => reponse.json())
         .then(resultat => {
-            if (resultat.statut === "succès") { alert("Ajouté !"); fermerFormulaire(); chargerLivres(); } 
+            if (resultat.statut === "succès") { alert("Ajouté !"); fermerFormulaire(); chargerLivres(); }
             else { alert("Erreur Google : " + resultat.message); }
         }).catch(erreur => console.error("Erreur :", erreur));
 }

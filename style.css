@@ -125,24 +125,31 @@ main {
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-/* --- CARROUSEL --- */
+/* --- CARROUSEL COMPACT --- */
 .carousel-container {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    gap: 15px;
-    padding-bottom: 15px;
+    gap: 12px;
+    padding-bottom: 10px;
+    scroll-behavior: smooth; /* Animation fluide */
 }
 .carousel-container::-webkit-scrollbar {
-    height: 8px;
+    height: 5px;
 }
 .carousel-container::-webkit-scrollbar-thumb {
     background-color: #cbd5e1;
     border-radius: 4px;
 }
 .carousel-card {
-    min-width: 260px;
+    min-width: 190px; /* Plus petit (était à 260px) */
+    max-width: 190px;
     scroll-snap-align: start;
     flex: 0 0 auto;
     cursor: pointer;
+    font-size: 0.85rem;
+}
+.carousel-card img {
+    height: 90px;
+    object-fit: cover;
 }
