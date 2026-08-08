@@ -523,6 +523,23 @@ function formatStatut(statut) {
     }
 }
 
+function genererEtoiles(note) {
+    const maxEtoiles = 5;
+    let noteNum = parseFloat(note) || 0;
+    let html = "";
+
+    for (let i = 1; i <= maxEtoiles; i++) {
+        if (i <= noteNum) {
+            // Étoile pleine (utilisation de FontAwesome, standard classique)
+            html += '<i class="fas fa-star text-warning"></i>';
+        } else {
+            // Étoile vide
+            html += '<i class="far fa-star text-warning"></i>';
+        }
+    }
+    return html;
+}
+
 /* ============================================================
    8. FILTRES
 ============================================================ */
