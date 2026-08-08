@@ -62,6 +62,16 @@
    1. CONFIGURATION
 ============================================================ */
 
+function echapperHTML(texte) {
+    if (!texte) return "";
+    return String(texte)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 /*
  * URL de ton Google Apps Script.
  *
