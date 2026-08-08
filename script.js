@@ -1,12 +1,15 @@
 /* ========================================================
-   VARIABLES GLOBALES ET URL
+   VARIABLES GLOBALES ET INITIALISATION
    ======================================================== */
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzfXagjnK-neDNfzMODyiTqx2wfgYDxIJTkvx5Ij-Ly_CdC4U27oBpnuqsxYVu0ZtSfyQ/exec"; // ⚠️ Remplace par la NOUVELLE URL si tu as mis à jour le script Google
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzfXagjnK-neDNfzMODyiTqx2wfgYDxIJTkvx5Ij-Ly_CdC4U27oBpnuqsxYVu0ZtSfyQ/exec";
 
 let tousLesLivres = [];
 let filtrePersonne = "Commune";
 let filtreStatut = "TOUS";
-let vueCoupDeCoeur = false; // Nouveau filtre
+let vueCoupDeCoeur = false;
+let carrouselTimer = null;
+let langueAPI = "fr";
+let timeoutRecherche = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     verifierProfil();
@@ -41,18 +44,15 @@ function chargerLivres() {
     fetch(URL_APPS_SCRIPT)
         .then(reponse => reponse.json())
         .then(lignes => {
-            tousLesLivres = lignes.slice(1); // Retire l'en-tête
+            tousLesLivres = lignes.slice(1); // Retire la ligne d'en-tête
             afficherLivres();
             afficherCarousel();
         })
         .catch(erreur => console.error("Erreur chargement :", erreur));
 }
 
-// Variable globale pour gérer le minuteur du carrousel
-let carrouselTimer = null;
-
 /* ========================================================
-   AFFICHAGE ET FILTRES (Règle du carrousel appliquée)
+   AFFICHAGE ET FILTRES
    ======================================================== */
 function changerVue(vueDemandee) {
     if (vueDemandee === "PAL") {
@@ -67,7 +67,7 @@ function changerVue(vueDemandee) {
         vueCoupDeCoeur = false;
     }
 
-    // 🟢 MASQUAGE DU CARROUSEL : Visible UNIQUEMENT sur la vue "Commune" sans autre filtre actif
+    // Le carrousel reste masqué en dehors de la vue Commune globale
     const sectionCarousel = document.getElementById("section-carousel");
     if (filtrePersonne === "Commune" && filtreStatut === "TOUS" && !vueCoupDeCoeur) {
         sectionCarousel.style.display = "block";
@@ -75,7 +75,10 @@ function changerVue(vueDemandee) {
         sectionCarousel.style.display = "none";
     }
 
-    document.getElementById("titre-grille").innerText = vueCoupDeCoeur ? "❤️ Mes Coups de Cœur" : (filtreStatut === "À lire" ? "📚 Ma Pile à Lire" : "Ma Bibliothèque");
+    document.getElementById("titre-grille").innerText = vueCoupDeCoeur
+        ? "❤️ Mes Coups de Cœur"
+        : (filtreStatut === "À lire" ? "📚 Ma Pile à Lire" : "Ma Bibliothèque");
+
     afficherLivres();
 }
 
@@ -99,31 +102,26 @@ function afficherLivres() {
 
         if (!titre) return;
 
-        // --- GESTION DES WIDGETS (Statistiques) ---
-        // On calcule les stats seulement pour les livres de la vue actuelle
+        // Statistiques
         if (filtrePersonne === "Commune" || personne === filtrePersonne) {
             if (statut.includes("Terminé")) livresLus++;
             budgetOfficiel += p_officiel;
             budgetReel += p_reel;
         }
 
-        // --- GESTION DES FILTRES ---
+        // Applique les filtres
         if (filtrePersonne !== "Commune" && personne !== filtrePersonne) return;
         if (filtreStatut === "À lire" && !statut.includes("À lire")) return;
         if (vueCoupDeCoeur && !estCoupDeCoeur) return;
 
-        // --- AFFICHAGE DE LA CARTE ---
         const coeurCouleur = estCoupDeCoeur ? "❤️" : "🤍";
 
         const carteHtml = `
             <div class="col">
                 <div class="card h-100 shadow-sm border-0 position-relative" onclick="ouvrirFicheLivre(${index})" style="cursor: pointer;">
-                    
-                    <!-- Bouton Coup de Coeur -->
                     <div class="position-absolute top-0 end-0 m-2 fs-3" style="z-index: 10;" onclick="toggleCoupDeCoeur(event, ${index})">
                         ${coeurCouleur}
                     </div>
-
                     ${couverture ? `<img src="${couverture}" class="card-img-top" alt="Couverture" style="height: 220px; object-fit: cover;">` : ''}
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div>
@@ -141,13 +139,12 @@ function afficherLivres() {
         grille.innerHTML += carteHtml;
     });
 
-    // Mise à jour des Widgets HTML
     document.getElementById("stat-lus").innerText = livresLus;
     document.getElementById("stat-budget").innerText = `${budgetReel.toFixed(2)} € / ${budgetOfficiel.toFixed(2)} €`;
 }
 
 /* ========================================================
-   CARROUSEL ANIMÉ ET COMPACT
+   CARROUSEL ANIMÉ
    ======================================================== */
 function afficherCarousel() {
     const conteneur = document.getElementById("carousel-livres");
@@ -184,7 +181,6 @@ function afficherCarousel() {
         conteneur.innerHTML += html;
     });
 
-    // 🟢 DÉMARRAGE DE L'ANIMATION AUTOMATIQUE
     demarrerAutoScrollCarousel();
 }
 
@@ -192,11 +188,8 @@ function demarrerAutoScrollCarousel() {
     const conteneur = document.getElementById("carousel-livres");
     if (carrouselTimer) clearInterval(carrouselTimer);
 
-    // Défile de 200px toutes les 3 secondes
     carrouselTimer = setInterval(() => {
         if (!conteneur) return;
-
-        // Si on atteint la fin du carrousel, on revient au début
         if (conteneur.scrollLeft + conteneur.clientWidth >= conteneur.scrollWidth - 10) {
             conteneur.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
@@ -205,21 +198,18 @@ function demarrerAutoScrollCarousel() {
     }, 3000);
 }
 
-
 /* ========================================================
-   GESTION DU COUP DE COEUR (Enregistrement)
+   GESTION DES COUPS DE CŒUR
    ======================================================== */
+// Bascule rapide depuis la carte dans la grille
 function toggleCoupDeCoeur(event, index) {
-    event.stopPropagation(); // Empêche d'ouvrir la fiche détaillée quand on clique sur le cœur
-
+    event.stopPropagation();
     const estCoupDeCoeur = (tousLesLivres[index][17] === "VRAI" || tousLesLivres[index][17] === true);
     const nouveauStatut = !estCoupDeCoeur;
 
-    // Mise à jour visuelle instantanée
     tousLesLivres[index][17] = nouveauStatut ? "VRAI" : "FAUX";
     afficherLivres();
 
-    // Envoi à Google Sheets
     fetch(URL_APPS_SCRIPT, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -228,30 +218,68 @@ function toggleCoupDeCoeur(event, index) {
             ligne: index + 2,
             coup_de_coeur: nouveauStatut
         })
-    }).catch(erreur => console.error("Erreur d'enregistrement du coeur :", erreur));
+    }).catch(erreur => console.error("Erreur d'enregistrement du cœur :", erreur));
+}
+
+// Bascule depuis la pop-up de détails
+function toggleCoupDeCoeurPopup(index) {
+    const estActuellementCoeur = (tousLesLivres[index][17] === "VRAI" || tousLesLivres[index][17] === true);
+    const nouveauStatut = !estActuellementCoeur;
+
+    tousLesLivres[index][17] = nouveauStatut ? "VRAI" : "FAUX";
+
+    const spanCoeur = document.getElementById("popup-coeur-btn");
+    if (spanCoeur) {
+        spanCoeur.innerText = nouveauStatut ? "❤️" : "🤍";
+    }
+
+    afficherLivres();
+    afficherCarousel();
+
+    fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            action: "UPDATE_COEUR",
+            ligne: index + 2,
+            coup_de_coeur: nouveauStatut
+        })
+    }).catch(erreur => console.error("Erreur d'enregistrement du cœur :", erreur));
+}
+
+// Bascule dans le formulaire d'ajout
+function toggleCoeurFormulaire() {
+    const inputHidden = document.getElementById("nouveau-coeur");
+    const spanCoeur = document.getElementById("form-coeur-btn");
+
+    const estActif = inputHidden.value === "true";
+    inputHidden.value = estActif ? "false" : "true";
+    spanCoeur.innerText = estActif ? "🤍" : "❤️";
 }
 
 /* ========================================================
-   Outils, Étoiles, Formulaires et Fiches
+   GESTION DU FORMULAIRE D'AJOUT ET ÉTOILES
    ======================================================== */
-
-function formatStatut(statut) {
-    if (!statut) return "-";
-    if (statut.includes("À lire")) return "À lire 📚";
-    if (statut.includes("En cours")) return "En cours 📖";
-    if (statut.includes("Pause")) return "Pause ⏸";
-    if (statut.includes("Terminé")) return "Terminé ✔️";
-    if (statut.includes("Abandonné")) return "Abandonné ❌☠️";
-    return statut;
+function ouvrirFormulaire() {
+    document.getElementById("modal-formulaire").classList.remove("cache");
 }
 
-function genererEtoiles(note) {
-    const nb = parseInt(note) || 0;
-    let html = '';
-    for (let i = 1; i <= 5; i++) {
-        html += `<span class="${i <= nb ? 'text-warning' : 'text-muted'} fs-6">★</span>`;
+function fermerFormulaire() {
+    document.getElementById("modal-formulaire").classList.add("cache");
+    document.getElementById("form-livre").reset();
+    document.getElementById("nouveau-note").value = "0";
+
+    // Réinitialise les étoiles
+    document.querySelectorAll('#star-rating-creation span').forEach(e => {
+        e.classList.remove('text-warning');
+        e.classList.add('text-muted');
+    });
+
+    // Réinitialise le bouton cœur du formulaire
+    document.getElementById("nouveau-coeur").value = "false";
+    if (document.getElementById("form-coeur-btn")) {
+        document.getElementById("form-coeur-btn").innerText = "🤍";
     }
-    return html;
 }
 
 function selectionnerEtoileCreation(valeur) {
@@ -270,19 +298,6 @@ function selectionnerEtoile(valeur) {
     });
 }
 
-function ouvrirFormulaire() { document.getElementById("modal-formulaire").classList.remove("cache"); }
-
-/* ========================================================
-   SOUMISSION ET RÉINITIALISATION DU FORMULAIRE
-   ======================================================== */
-function fermerFormulaire() {
-    document.getElementById("modal-formulaire").classList.add("cache");
-    document.getElementById("form-livre").reset();
-    document.getElementById("nouveau-note").value = "0";
-    document.getElementById("nouveau-coeur").checked = false; // 🟢 Réinitialise la case
-    document.querySelectorAll('#star-rating-creation span').forEach(e => { e.classList.remove('text-warning'); e.classList.add('text-muted'); });
-}
-
 function soumettreLivre(event) {
     event.preventDefault();
     const nouveauLivre = {
@@ -293,122 +308,33 @@ function soumettreLivre(event) {
         auteur: document.getElementById("auteur").value,
         statut: document.getElementById("statut").value,
         note: document.getElementById("nouveau-note").value,
-        coup_de_coeur: document.getElementById("nouveau-coeur").checked // 🟢 Récupère l'état de la case
+        coup_de_coeur: document.getElementById("nouveau-coeur").value === "true"
     };
 
-    fetch(URL_APPS_SCRIPT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(nouveauLivre) })
-        .then(reponse => reponse.json())
-        .then(resultat => {
-            if (resultat.statut === "succès") { alert("Ajouté !"); fermerFormulaire(); chargerLivres(); }
-            else { alert("Erreur Google : " + resultat.message); }
-        }).catch(erreur => console.error("Erreur :", erreur));
-}
-
-function ouvrirFicheLivre(index) {
-    const livre = tousLesLivres[index];
-    if (!livre) return;
-    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livre;
-
-    const contenu = `
-        <div class="d-flex justify-content-between align-items-center mb-3 pe-4">
-            <h3 class="mb-0 fw-bold">${titre || "Sans titre"} ${coup_de_coeur === "VRAI" ? "❤️" : ""}</h3>
-            <button class="btn btn-outline-primary btn-sm fw-bold ms-2" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>
-        </div>
-        <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
-        <hr>
-        <div class="row g-4">
-            ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm"></div>` : ''}
-            <div class="${couverture ? 'col-md-8' : 'col-12'}">
-                <p><strong>Appartient à :</strong> ${personne || "-"}</p>
-                <p><strong>Statut :</strong> ${formatStatut(statut)}</p>
-                <p><strong>Nombre de pages :</strong> ${pages || "-"}</p>
-                <p><strong>Prix :</strong> ${prix_reel || "-"} € (Officiel : ${prix_officiel || "-"} €)</p>
-                <p class="d-flex align-items-center gap-2"><strong>Note :</strong> ${notes ? genererEtoiles(notes) + ` (${notes}/5)` : "-"}</p>
-                <p><strong>Avis :</strong> ${review || "-"}</p>
-            </div>
-        </div>`;
-    document.getElementById("fiche-details").innerHTML = contenu;
-    document.getElementById("modal-fiche").classList.remove("cache");
-}
-
-function fermerFicheLivre() { document.getElementById("modal-fiche").classList.add("cache"); }
-
-function passerEnModeEdition(index) {
-    const livre = tousLesLivres[index];
-    if (!livre) return;
-    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review] = livre;
-    const noteActuelle = parseInt(notes) || 0;
-    const statutActuel = statut || "";
-
-    const contenuEdit = `
-        <form onsubmit="sauvegarderModification(event, ${index})">
-            <h4 class="mb-3">Modifier la fiche</h4>
-            <div class="mb-3"><label class="fw-bold">Titre :</label><input type="text" id="edit-titre" class="form-control" value="${titre || ''}" required></div>
-            <div class="mb-3"><label class="fw-bold">Auteur :</label><input type="text" id="edit-auteur" class="form-control" value="${auteur || ''}" required></div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="fw-bold">Statut :</label>
-                    <select id="edit-statut" class="form-select">
-                        <option value="À lire" ${statutActuel.includes('À lire') ? 'selected' : ''}>À lire 📚</option>
-                        <option value="En cours" ${statutActuel.includes('En cours') ? 'selected' : ''}>En cours 📖</option>
-                        <option value="Pause" ${statutActuel.includes('Pause') ? 'selected' : ''}>Pause ⏸</option>
-                        <option value="Terminé" ${statutActuel.includes('Terminé') ? 'selected' : ''}>Terminé ✔️</option>
-                        <option value="Abandonné" ${statutActuel.includes('Abandonné') ? 'selected' : ''}>Abandonné ❌☠️</option>
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="fw-bold">Note :</label>
-                    <div id="star-rating" class="fs-3" style="cursor: pointer; user-select: none;">
-                        <span onclick="selectionnerEtoile(1)" class="${noteActuelle >= 1 ? 'text-warning' : 'text-muted'}">★</span>
-                        <span onclick="selectionnerEtoile(2)" class="${noteActuelle >= 2 ? 'text-warning' : 'text-muted'}">★</span>
-                        <span onclick="selectionnerEtoile(3)" class="${noteActuelle >= 3 ? 'text-warning' : 'text-muted'}">★</span>
-                        <span onclick="selectionnerEtoile(4)" class="${noteActuelle >= 4 ? 'text-warning' : 'text-muted'}">★</span>
-                        <span onclick="selectionnerEtoile(5)" class="${noteActuelle >= 5 ? 'text-warning' : 'text-muted'}">★</span>
-                    </div>
-                    <input type="hidden" id="edit-note" value="${noteActuelle}">
-                </div>
-            </div>
-            <div class="mb-3"><label class="fw-bold">Avis :</label><textarea id="edit-review" class="form-control" rows="3">${review || ''}</textarea></div>
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-secondary" onclick="ouvrirFicheLivre(${index})">Annuler</button>
-                <button type="submit" class="btn btn-success">💾 Enregistrer</button>
-            </div>
-        </form>`;
-    document.getElementById("fiche-details").innerHTML = contenuEdit;
-}
-
-function sauvegarderModification(event, index) {
-    event.preventDefault();
-    const livreModifie = {
-        action: "UPDATE", ligne: index + 2,
-        titre: document.getElementById("edit-titre").value, auteur: document.getElementById("edit-auteur").value,
-        statut: document.getElementById("edit-statut").value, notes: document.getElementById("edit-note").value,
-        review: document.getElementById("edit-review").value
-    };
-
-    fetch(URL_APPS_SCRIPT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(livreModifie) })
+    fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(nouveauLivre)
+    })
         .then(reponse => reponse.json())
         .then(resultat => {
             if (resultat.statut === "succès") {
-                tousLesLivres[index][6] = livreModifie.titre; tousLesLivres[index][7] = livreModifie.auteur;
-                tousLesLivres[index][13] = livreModifie.statut; tousLesLivres[index][14] = livreModifie.notes; tousLesLivres[index][15] = livreModifie.review;
-                fermerFicheLivre(); filtreStatut = "TOUS"; chargerLivres(); // Recharge tout pour relancer le carrousel
-            } else { alert("Erreur : " + resultat.message); }
-        }).catch(erreur => console.error("Erreur :", erreur));
+                fermerFormulaire();
+                chargerLivres();
+            } else {
+                alert("Erreur Google : " + resultat.message);
+            }
+        })
+        .catch(erreur => console.error("Erreur :", erreur));
 }
 
 /* ========================================================
-   INTEGRATION API GOOGLE BOOKS (Recherche & Auto-remplissage)
+   INTEGRATION API GOOGLE BOOKS
    ======================================================== */
-let langueAPI = "fr";
-
 function changerLangueAPI(langue, label) {
     langueAPI = langue;
     document.getElementById("btn-langue-api").innerText = label;
 }
-
-// Variable pour éviter d'envoyer trop de requêtes à la suite
-let timeoutRecherche = null;
 
 function rechercherLivreAPI() {
     const requete = document.getElementById("recherche-api-input").value.trim();
@@ -419,10 +345,8 @@ function rechercherLivreAPI() {
         return;
     }
 
-    // Si on clique sur le bouton, on nettoie le minuteur précédent
     if (timeoutRecherche) clearTimeout(timeoutRecherche);
 
-    // Petit délai de sécurité de 300 millisecondes pour calmer l'API
     timeoutRecherche = setTimeout(() => {
         const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&langRestrict=${langueAPI}&maxResults=5`;
 
@@ -462,9 +386,8 @@ function rechercherLivreAPI() {
                         if (document.getElementById("titre")) document.getElementById("titre").value = titre;
                         if (document.getElementById("auteur")) document.getElementById("auteur").value = auteurs;
                         if (document.getElementById("edit-couverture")) document.getElementById("edit-couverture").value = couverture;
-                        // S'adapte aussi si on est dans le formulaire de création
                         if (document.getElementById("couverture")) document.getElementById("couverture").value = couverture;
-                        if (document.getElementById("pages")) document.getElementById("pages").pages = pages;
+                        if (document.getElementById("pages")) document.getElementById("pages").value = pages;
                         if (document.getElementById("genre")) document.getElementById("genre").value = genre;
                         conteneur.innerHTML = "";
                     };
@@ -479,47 +402,80 @@ function rechercherLivreAPI() {
 }
 
 /* ========================================================
-   AFFICHAGE D'UN LIVRE (Formatage des relectures)
+   FICHE DÉTAILLÉE ET RELECTURES MULTIPLES
    ======================================================== */
 function ouvrirFicheLivre(index) {
-    const livre = tousLesLivres[index];
-    if (!livre) return;
+    const livreActuel = tousLesLivres[index];
+    if (!livreActuel) return;
 
-    const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = livre;
+    const titreCible = (livreActuel[6] || "").trim().toLowerCase();
+    const doublons = tousLesLivres.filter(l => (l[6] || "").trim().toLowerCase() === titreCible);
 
-    // --- Formatage de l'historique des avis (Relectures) ---
-    let avisHtml = "<p class='text-muted'>Aucun avis enregistré.</p>";
-    if (review) {
-        // Séparation des blocs de relecture basés sur '---'
-        const relectures = review.split("---").filter(r => r.trim() !== "");
-        avisHtml = relectures.map(r => `
-            <div class="border-start border-4 border-primary ps-3 py-2 bg-light rounded mb-2" style="white-space: pre-wrap;">
-                ${r.trim()}
+    let tousLesAvis = [];
+    let totalPages = 0;
+    let totalPrixReel = 0;
+    let totalPrixOfficiel = 0;
+    let formatsConcernes = new Set();
+    let personnesconcernees = new Set();
+    let estCoupDeCoeurGlobal = false;
+
+    doublons.forEach(l => {
+        const [id, personne, date_debut, date_fin, duree, couverture, titre, auteur, pages, prix_officiel, prix_reel, format, genre, statut, notes, review, tags, coup_de_coeur] = l;
+
+        if (personne) personnesconcernees.add(personne);
+        if (format) formatsConcernes.add(format);
+        if (pages) totalPages += parseInt(pages) || 0;
+        if (prix_reel) totalPrixReel += parseFloat(String(prix_reel).replace(',', '.')) || 0;
+        if (prix_officiel) totalPrixOfficiel += parseFloat(String(prix_officiel).replace(',', '.')) || 0;
+        if (coup_de_coeur === "VRAI" || coup_de_coeur === true) estCoupDeCoeurGlobal = true;
+
+        if (review && review.trim() !== "") {
+            tousLesAvis.push(`<div class="text-muted small mb-1"><em>Exemplaire (${personne || 'Moi'} - ${format || 'Standard'}) :</em></div>` + review);
+        }
+    });
+
+    let avisHtml = "<p class='text-muted'>Aucun avis enregistré pour ce titre.</p>";
+    if (tousLesAvis.length > 0) {
+        avisHtml = tousLesAvis.map(r => `
+            <div class="border-start border-4 border-primary ps-3 py-2 bg-light rounded mb-3" style="white-space: pre-wrap;">
+                ${r}
             </div>
         `).join("");
     }
 
+    const auteur = livreActuel[7];
+    const couverture = livreActuel[5];
+
     const contenu = `
-        <div class="d-flex justify-content-between align-items-center mb-3 pe-4">
-            <h3 class="mb-0 fw-bold">${titre || "Sans titre"} ${coup_de_coeur === "VRAI" ? "❤️" : ""}</h3>
-            <button class="btn btn-outline-primary btn-sm fw-bold ms-2" onclick="passerEnModeEdition(${index})">✏️ Modifier tout</button>
+        <div class="d-flex justify-content-between align-items-center mb-3 pe-2">
+            <div class="d-flex align-items-center gap-3">
+                <h3 class="mb-0 fw-bold">${livreActuel[6] || "Sans titre"}</h3>
+                <span id="popup-coeur-btn" onclick="toggleCoupDeCoeurPopup(${index})" class="fs-3" style="cursor: pointer; user-select: none;" title="Coup de cœur">
+                    ${estCoupDeCoeurGlobal ? "❤️" : "🤍"}
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary btn-sm fw-bold" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>
+                <button type="button" class="btn-close" onclick="fermerFicheLivre()" aria-label="Fermer"></button>
+            </div>
         </div>
         <h5 class="text-muted mb-3">${auteur || "Auteur inconnu"}</h5>
+        
+        ${doublons.length > 1 ? `<div class="alert alert-info py-2 small">ℹ️ Ce livre est enregistré en <strong>${doublons.length} exemplaires/éditions</strong> (regroupés ici).</div>` : ''}
+        
         <hr>
         <div class="row g-4">
             ${couverture ? `<div class="col-md-4"><img src="${couverture}" class="img-fluid rounded shadow-sm"></div>` : ''}
             <div class="${couverture ? 'col-md-8' : 'col-12'}">
-                <p><strong>Appartient à :</strong> ${personne || "-"}</p>
-                <p><strong>Statut :</strong> ${formatStatut(statut)}</p>
-                <p><strong>Format & Genre :</strong> ${format || "-"} | ${genre || "-"}</p>
-                <p><strong>Dates :</strong> Du ${date_debut || "?"} au ${date_fin || "?"} (${duree || "-"})</p>
-                <p><strong>Pages & Prix :</strong> ${pages || "-"} pages — ${prix_reel || "-"} € (Officiel : ${prix_officiel || "-"} €)</p>
-                <p><strong>Tags :</strong> ${tags ? `<span class="badge bg-secondary">${tags}</span>` : "-"}</p>
-                <p class="d-flex align-items-center gap-2"><strong>Note :</strong> ${notes ? genererEtoiles(notes) + ` (${notes}/5)` : "-"}</p>
+                <p><strong>Propriétaires / Lecteurs :</strong> ${Array.from(personnesconcernees).join(", ") || "-"}</p>
+                <p><strong>Formats enregistrés :</strong> ${Array.from(formatsConcernes).join(", ") || "-"}</p>
+                <p><strong>Total pages lues (cumulé) :</strong> ${totalPages} pages</p>
+                <p><strong>Budget total dépensé :</strong> ${totalPrixReel.toFixed(2)} € (Officiel : ${totalPrixOfficiel.toFixed(2)} €)</p>
+                <p><strong>Nombre total de lectures :</strong> <span class="badge bg-success">${doublons.length} fois</span></p>
             </div>
         </div>
         <div class="mt-4">
-            <h5 class="fw-bold mb-2">💬 Avis & Historique de Relecture :</h5>
+            <h5 class="fw-bold mb-2">💬 Tous les Avis & Relectures pour ce titre :</h5>
             ${avisHtml}
         </div>`;
 
@@ -527,8 +483,12 @@ function ouvrirFicheLivre(index) {
     document.getElementById("modal-fiche").classList.remove("cache");
 }
 
+function fermerFicheLivre() {
+    document.getElementById("modal-fiche").classList.add("cache");
+}
+
 /* ========================================================
-   MODIFICATION COMPLÈTE DE LA CARTE & BOUTON RELECTURE
+   MODIFICATION COMPLÈTE DE LA FICHE LIVRE
    ======================================================== */
 function passerEnModeEdition(index) {
     const livre = tousLesLivres[index];
@@ -596,7 +556,6 @@ function passerEnModeEdition(index) {
                 <label class="form-check-label fw-bold" for="edit-coeur">❤️ Coup de Cœur</label>
             </div>
 
-            <!-- Gestion des avis & relectures -->
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold">Avis & Historique :</label>
@@ -652,7 +611,6 @@ function sauvegarderModification(event, index) {
         .then(reponse => reponse.json())
         .then(resultat => {
             if (resultat.statut === "succès") {
-                // Mise à jour locale du tableau
                 tousLesLivres[index][2] = livreModifie.date_debut;
                 tousLesLivres[index][3] = livreModifie.date_fin;
                 tousLesLivres[index][4] = livreModifie.duree;
@@ -677,4 +635,26 @@ function sauvegarderModification(event, index) {
             }
         })
         .catch(erreur => console.error("Erreur :", erreur));
+}
+
+/* ========================================================
+   OUTILS DE FORMATAGE VISUEL
+   ======================================================== */
+function formatStatut(statut) {
+    if (!statut) return "-";
+    if (statut.includes("À lire")) return "À lire 📚";
+    if (statut.includes("En cours")) return "En cours 📖";
+    if (statut.includes("Pause")) return "Pause ⏸";
+    if (statut.includes("Terminé")) return "Terminé ✔️";
+    if (statut.includes("Abandonné")) return "Abandonné ❌☠️";
+    return statut;
+}
+
+function genererEtoiles(note) {
+    const nb = parseInt(note) || 0;
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        html += `<span class="${i <= nb ? 'text-warning' : 'text-muted'} fs-6">★</span>`;
+    }
+    return html;
 }
