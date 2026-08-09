@@ -971,75 +971,61 @@ function afficherLivres(livres) {
  * de HTML à plusieurs endroits.
  */
 function creerCarteLivre(livre) {
+    const index = tousLesLivres.indexOf(livre);
 
-    /*
-     * On retrouve l'index réel du livre dans
-     * tousLesLivres.
-     *
-     * Cet index est nécessaire pour pouvoir modifier
-     * le bon livre dans Google Sheets.
-     */
-    const index =
-        tousLesLivres.indexOf(livre);
-
-
-    const coeur =
-        livre.coupDeCoeur ? "❤️" : "🤍";
-
-    // 1. On vérifie si la personne connectée est bien le propriétaire du livre
+    // Vérifie si la personne connectée est la propriétaire du livre
     const estProprietaire = (livre.personne === utilisateurActuel);
 
-    // 2. Bouton Coup de cœur : cliquable uniquement si c'est son livre
-    const boutonCoeurHTML = estProprietaire
-        ? `<button class="btn btn-sm ${livre.coupDeCoeur ? 'btn-danger' : 'btn-outline-danger'}" onclick="basculerCoupDeCoeur(${index})">❤️</button>`
-        : (livre.coupDeCoeur ? `<span class="badge bg-danger">❤️</span>` : '');
+    // Bouton coup de cœur : cliquable pour le propriétaire, affichage fixe pour l'autre
+    let coeurHTML = "";
+    if (estProprietaire) {
+        const coeurIcone = livre.coupDeCoeur ? "❤️" : "🤍";
+        coeurHTML = `
+            <button
+                type="button"
+                class="btn position-absolute top-0 end-0 fs-4 p-1"
+                data-action="coeur"
+                data-index="${index}"
+                title="Coup de cœur"
+                style="z-index:2;"
+            >
+                ${coeurIcone}
+            </button>
+        `;
+    } else if (livre.coupDeCoeur) {
+        coeurHTML = `
+            <span
+                class="position-absolute top-0 end-0 fs-4 p-1"
+                title="Coup de cœur de ${echapperHTML(livre.personne)}"
+                style="z-index:2; cursor:default;"
+            >
+                ❤️
+            </span>
+        `;
+    }
 
-    // 3. Bouton Modifier : affiché UNIQUEMENT si c'est son livre
-    const boutonEditerHTML = estProprietaire
-        ? `<button class="btn btn-sm btn-outline-primary btn-editer" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>`
-        : '';
-
-
-    /*
-     * Une couverture n'est pas obligatoire.
-     */
-    const couvertureHTML =
-        livre.couverture
-            ? `
-                <img
-                    src="${echapperHTML(livre.couverture)}"
-                    class="card-img-top cover-image"
-                    alt="Couverture de ${echapperHTML(livre.titre)}"
-                >
-              `
-            : "";
-
+    const couvertureHTML = livre.couverture
+        ? `
+            <img
+                src="${echapperHTML(livre.couverture)}"
+                class="card-img-top cover-image"
+                alt="Couverture de ${echapperHTML(livre.titre)}"
+            >
+          `
+        : "";
 
     return `
         <div class="col">
-
             <div
                 class="card h-100 shadow-sm border-0 position-relative fade-in"
                 data-action="ouvrir-livre"
                 data-index="${index}"
                 style="cursor:pointer;"
             >
-
-                <button
-                    type="button"
-                    class="btn position-absolute top-0 end-0 fs-4 p-1"
-                    data-action="coeur"
-                    data-index="${index}"
-                    title="Coup de cœur"
-                    style="z-index:2;"
-                >
-                    ${coeur}
-                </button>
-
+                ${coeurHTML}
                 ${couvertureHTML}
 
                 <div class="card-body">
-
                     <span class="badge bg-primary mb-2">
                         ${echapperHTML(livre.personne)}
                     </span>
@@ -1055,15 +1041,11 @@ function creerCarteLivre(livre) {
                     <span class="badge bg-light text-dark border">
                         ${formatStatut(livre.statut)}
                     </span>
-
                 </div>
-
             </div>
-
         </div>
     `;
 }
-
 
 /* ============================================================
    11. STATISTIQUES
@@ -1494,42 +1476,34 @@ function demarrerAutoScrollCarousel() {
  * Active ou désactive le coup de cœur d'un livre.
  */
 async function toggleCoupDeCoeur(index) {
+    const livre = tousLesLivres[index];
 
-    const livre =
-        tousLesLivres[index];
+    if (!livre) return;
 
-
-    if (!livre) {
+    // SÉCURITÉ : Seule la personne qui possède le livre peut changer son coup de cœur
+    if (livre.personne !== utilisateurActuel) {
+        alert(`Seule ${livre.personne} peut modifier ses coups de cœur !`);
         return;
     }
-
 
     /*
      * Inverse la valeur.
      */
-    livre.coupDeCoeur =
-        !livre.coupDeCoeur;
-
+    livre.coupDeCoeur = !livre.coupDeCoeur;
 
     /*
      * On rafraîchit immédiatement l'écran.
      */
     appliquerFiltresEtAfficher();
-
     afficherCarousel();
-
 
     /*
      * Puis on sauvegarde dans Google Sheets.
      */
     await envoyerAuGoogleSheet({
-
         action: "UPDATE_COEUR",
-
         ligne: index + 2,
-
         coup_de_coeur: livre.coupDeCoeur
-
     });
 }
 
@@ -2585,12 +2559,10 @@ function ouvrirFicheLivre(index) {
                             ${echapperHTML(livre.titre)}
                         </h3>
 
-                        <button
-                            id="popup-coeur-btn"
-                            class="btn btn-link fs-3 p-0"
-                            title="Coup de cœur">
-                            ${coupDeCoeurGlobal ? "❤️" : "🤍"}
-                        </button>
+                        ${(livre.personne === utilisateurActuel)
+            ? `<button id="popup-coeur-btn" class="btn btn-link fs-3 p-0" title="Coup de cœur">${livre.coupDeCoeur ? "❤️" : "🤍"}</button>`
+            : (livre.coupDeCoeur ? `<span class="fs-3 p-0" title="Coup de cœur de ${echapperHTML(livre.personne)}">❤️</span>` : '')
+        }
 
                     </div>
 
@@ -2757,12 +2729,10 @@ function ouvrirFicheLivre(index) {
     /*
      * Bouton coup de cœur.
      */
-    document
-        .getElementById("popup-coeur-btn")
-        .addEventListener(
-            "click",
-            () => toggleCoupDeCoeurPopup(index)
-        );
+    const btnCoeurPopup = document.getElementById("popup-coeur-btn");
+    if (btnCoeurPopup) {
+        btnCoeurPopup.addEventListener("click", () => toggleCoupDeCoeurPopup(index));
+    }
 
 
     /*
