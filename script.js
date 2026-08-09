@@ -62,6 +62,26 @@
    1. CONFIGURATION
 ============================================================ */
 
+// Au tout début de ton script.js :
+let utilisateurActuel = localStorage.getItem("utilisateurActuel") || "Matide";
+
+// Si tu as un élément select dans ton HTML (par exemple id="select-utilisateur") :
+const selectUtilisateur = document.getElementById("select-utilisateur");
+if (selectUtilisateur) {
+    selectUtilisateur.value = utilisateurActuel; // Met le select sur le bon nom au chargement
+
+    // Quand vous changez d'utilisateur dans le menu déroulant :
+    selectUtilisateur.addEventListener("change", (e) => {
+        utilisateurActuel = e.target.value;
+        localStorage.setItem("utilisateurActuel", utilisateurActuel); // On mémorise le choix
+
+        // On recharge l'affichage pour actualiser les boutons (modifier/coeur) selon qui est connecté
+        if (typeof chargerLivres === "function") {
+            chargerLivres();
+        }
+    });
+}
+
 function echapperHTML(texte) {
     if (!texte) return "";
     return String(texte)
