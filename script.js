@@ -2860,14 +2860,9 @@ function passerEnModeEdition(index) {
         return;
     }
 
-    const livre =
-        tousLesLivres[index];
-
-
     if (!livre) {
         return;
     }
-
 
     const modal =
         document.getElementById("modal-fiche");
