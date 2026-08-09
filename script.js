@@ -455,20 +455,31 @@ function choisirProfil(nom) {
 /* ============================================================
     6.1. GESTION DES BOUTONS - VUE
 ============================================================ */
-
 const boutonsFiltres = document.querySelectorAll(".btn-filtre");
 
 boutonsFiltres.forEach(bouton => {
     bouton.addEventListener("click", () => {
-        // 1. Retire le style plein (btn-primary) et remet le contour (btn-outline-primary) sur tous les boutons
+        // 1. On remet tous les boutons en mode "contour" (outline)
         boutonsFiltres.forEach(b => {
-            b.classList.remove("btn-primary");
-            b.classList.add("btn-outline-primary");
+            const vue = b.dataset.vue;
+            if (vue === "PAL") {
+                b.classList.replace("btn-success", "btn-outline-success");
+            } else if (vue === "CoupsDeCoeur") {
+                b.classList.replace("btn-danger", "btn-outline-danger");
+            } else {
+                b.classList.replace("btn-dark", "btn-outline-dark");
+            }
         });
 
-        // 2. Applique le style plein (btn-primary) uniquement sur le bouton cliqué
-        bouton.classList.remove("btn-outline-primary");
-        bouton.classList.add("btn-primary");
+        // 2. On met le bouton cliqué en mode "plein"
+        const vueCliquee = bouton.dataset.vue;
+        if (vueCliquee === "PAL") {
+            bouton.classList.replace("btn-outline-success", "btn-success");
+        } else if (vueCliquee === "CoupsDeCoeur") {
+            bouton.classList.replace("btn-outline-danger", "btn-danger");
+        } else {
+            bouton.classList.replace("btn-outline-dark", "btn-dark");
+        }
     });
 });
 
@@ -1327,92 +1338,40 @@ function afficherCarousel() {
  * Crée une carte du carrousel.
  */
 function creerCarteCarousel({ livre, index }) {
+    const couverture = livre.couverture || "https://via.placeholder.com/150x220?text=Pas+de+couverture";
 
-    const couverture =
-        livre.couverture ||
-        "https://via.placeholder.com/150x220?text=Pas+de+couverture";
-
+    // Récupération automatique des couleurs en fonction du genre du livre
+    const styleGenre = obtenirCouleursGenre(livre.genre);
 
     return `
-        <div
-            class="card carousel-card shadow-sm border-0"
-            data-carousel-index="${index}"
-        >
-
+        <div class="card carousel-card shadow-sm border-0" data-carousel-index="${index}">
             <div class="row g-0 align-items-center">
-
                 <div class="col-4">
-
-                    <img
-                        src="${echapperHTML(couverture)}"
-                        class="img-fluid rounded-start"
-                        alt="Couverture"
-                    >
-
+                    <img src="${echapperHTML(couverture)}" class="img-fluid rounded-start" alt="Couverture">
                 </div>
-
                 <div class="col-8">
-
                     <div class="card-body p-2">
-
-                        <h6
-                            class="fw-bold mb-1 text-truncate"
-                            title="${echapperHTML(livre.titre)}"
-                        >
+                        <h6 class="fw-bold mb-1 text-truncate" title="${echapperHTML(livre.titre)}">
                             ${echapperHTML(livre.titre)}
                         </h6>
-
-                        <small class="text-muted d-block text-truncate">
+                        <small class="text-muted d-block text-truncate mb-1">
                             ${echapperHTML(livre.auteur)}
                         </small>
+                        
+                        ${livre.genre ? `
+                            <span class="badge mb-1 px-1 py-0" style="background-color: ${styleGenre.bg}; color: ${styleGenre.color}; font-size: 0.7rem;">
+                                ${echapperHTML(livre.genre)}
+                            </span>
+                        ` : ""}
 
                         <div>
                             ${genererEtoiles(livre.note)}
                         </div>
-
                     </div>
-
-                </div>
-
-            </div>
-
-        </div>
-    `;
-    // Récupération automatique des couleurs en fonction du genre du livre
-    const styleGenre = obtenirCouleursGenre(livre.genre);
-
-    const carte = document.createElement("div");
-    carte.className = "col";
-
-    carte.innerHTML = `
-        <div class="card h-100 shadow-sm">
-            ${livre.couverture ? `
-                <img src="${echapperHTML(livre.couverture)}" class="card-img-top" alt="${echapperHTML(livre.titre)}" style="height: 250px; object-fit: cover;">
-            ` : `
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 250px;">Pas d'image</div>
-            `}
-            
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">${echapperHTML(livre.titre)}</h5>
-                <p class="card-text text-muted mb-2"><small>${echapperHTML(livre.auteur)}</small></p>
-                
-                <div class="mt-auto">
-                    <!-- Badge du genre avec application dynamique des couleurs -->
-                    ${livre.genre ? `
-                        <span class="badge mb-2 px-2 py-1" style="background-color: ${styleGenre.bg}; color: ${styleGenre.color};">
-                            ${echapperHTML(livre.genre)}
-                        </span>
-                    ` : ""}
-                    
-                    <p class="card-text mb-0">
-                        <span class="badge bg-secondary">${formatStatut(livre.statut)}</span>
-                    </p>
                 </div>
             </div>
         </div>
     `;
-
-    return carte;
 }
 
 
@@ -3709,160 +3668,161 @@ function passerEnModeEdition(index) {
 
         champ.focus();
     }
-
-
-    /* ============================================================
-       20. COMMUNICATION GOOGLE SHEETS — FONCTION CENTRALE
-    ============================================================ */
-
-    /*
-     * Toutes les requêtes POST vers Google Sheets passent
-     * par cette fonction.
-     *
-     * C'est pratique parce que si un jour tu changes ton
-     * système de communication, tu n'auras qu'une fonction
-     * à modifier.
-     */
-    async function envoyerAuGoogleSheet(donnees) {
-
-        const reponse =
-            await fetch(
-                URL_APPS_SCRIPT,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "text/plain;charset=utf-8"
-                    },
-
-                    body:
-                        JSON.stringify(donnees)
-                }
-            );
-
-
-        return await reponse.json();
-    }
-
-
-    /* ============================================================
-       21. OUTILS D'AFFICHAGE
-    ============================================================ */
-
-    /*
-     * Transforme un statut brut en statut plus joli.
-     */
-    function formatStatut(statut) {
-
-        if (!statut) {
-            return "-";
-        }
-
-
-        if (statut.includes("À lire")) {
-            return "À lire 📚";
-        }
-
-
-        if (statut.includes("En cours")) {
-            return "En cours 📖";
-        }
-
-
-        if (statut.includes("Pause")) {
-            return "Pause ⏸";
-        }
-
-
-        if (statut.includes("Terminé")) {
-            return "Terminé ✔️";
-        }
-
-
-        if (statut.includes("Abandonné")) {
-            return "Abandonné ❌☠️";
-        }
-
-
-        return statut;
-    }
-
-
-    /*
-     * Génère les cinq étoiles utilisées pour afficher
-     * la note d'un livre.
-     */
-    function genererEtoiles(note) {
-
-        const valeur =
-            parseInt(note) || 0;
-
-
-        return Array.from(
-            { length: 5 },
-            (_, index) => `
-
-            <span
-                class="${index < valeur
-                    ? "text-warning"
-                    : "text-muted"
-                }">
-                ★
-            </span>
-
-        `
-        ).join("");
-    }
-
-
-    /* ============================================================
-       22. SÉCURITÉ HTML
-    ============================================================ */
-
-    /*
-     * Cette fonction protège le HTML lorsqu'on affiche
-     * une information provenant du Google Sheet.
-     *
-     * Exemple :
-     *
-     * Si quelqu'un écrit dans le Sheet :
-     *
-     * <script>alert("bonjour")</script>
-     *
-     * le navigateur ne doit PAS exécuter ce code.
-     *
-     * Cette fonction transforme les caractères spéciaux
-     * en texte inoffensif.
-     */
-    function echapperHTML(valeur) {
-
-        if (valeur === null || valeur === undefined) {
-            return "";
-        }
-
-
-        return String(valeur)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-
-    /*
-     * Version destinée aux valeurs placées
-     * dans un attribut HTML comme :
-     *
-     * value="..."
-     */
-    function echapperAttribut(valeur) {
-
-        return echapperHTML(valeur);
-    }
-
 }
+
+
+/* ============================================================
+   20. COMMUNICATION GOOGLE SHEETS — FONCTION CENTRALE
+============================================================ */
+
+/*
+ * Toutes les requêtes POST vers Google Sheets passent
+ * par cette fonction.
+ *
+ * C'est pratique parce que si un jour tu changes ton
+ * système de communication, tu n'auras qu'une fonction
+ * à modifier.
+ */
+async function envoyerAuGoogleSheet(donnees) {
+
+    const reponse =
+        await fetch(
+            URL_APPS_SCRIPT,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "text/plain;charset=utf-8"
+                },
+
+                body:
+                    JSON.stringify(donnees)
+            }
+        );
+
+
+    return await reponse.json();
+}
+
+
+/* ============================================================
+   21. OUTILS D'AFFICHAGE
+============================================================ */
+
+/*
+ * Transforme un statut brut en statut plus joli.
+ */
+// function formatStatut(statut) {
+
+//     if (!statut) {
+//         return "-";
+//     }
+
+
+//     if (statut.includes("À lire")) {
+//         return "À lire 📚";
+//     }
+
+
+//     if (statut.includes("En cours")) {
+//         return "En cours 📖";
+//     }
+
+
+//     if (statut.includes("Pause")) {
+//         return "Pause ⏸";
+//     }
+
+
+//     if (statut.includes("Terminé")) {
+//         return "Terminé ✔️";
+//     }
+
+
+//     if (statut.includes("Abandonné")) {
+//         return "Abandonné ❌☠️";
+//     }
+
+
+//     return statut;
+// }
+
+
+// /*
+//  * Génère les cinq étoiles utilisées pour afficher
+//  * la note d'un livre.
+//  */
+// function genererEtoiles(note) {
+
+//     const valeur =
+//         parseInt(note) || 0;
+
+
+//     return Array.from(
+//         { length: 5 },
+//         (_, index) => `
+
+//             <span
+//                 class="${index < valeur
+//                 ? "text-warning"
+//                 : "text-muted"
+//             }">
+//                 ★
+//             </span>
+
+//         `
+//     ).join("");
+// }
+
+
+/* ============================================================
+   22. SÉCURITÉ HTML
+============================================================ */
+
+/*
+ * Cette fonction protège le HTML lorsqu'on affiche
+ * une information provenant du Google Sheet.
+ *
+ * Exemple :
+ *
+ * Si quelqu'un écrit dans le Sheet :
+ *
+ * <script>alert("bonjour")</script>
+ *
+ * le navigateur ne doit PAS exécuter ce code.
+ *
+ * Cette fonction transforme les caractères spéciaux
+ * en texte inoffensif.
+ */
+// function echapperHTML(valeur) {
+
+//     if (valeur === null || valeur === undefined) {
+//         return "";
+//     }
+
+
+//     return String(valeur)
+//         .replace(/&/g, "&amp;")
+//         .replace(/</g, "&lt;")
+//         .replace(/>/g, "&gt;")
+//         .replace(/"/g, "&quot;")
+//         .replace(/'/g, "&#039;");
+// }
+
+
+// /*
+//  * Version destinée aux valeurs placées
+//  * dans un attribut HTML comme :
+//  *
+//  * value="..."
+//  */
+// function echapperAttribut(valeur) {
+
+//     return echapperHTML(valeur);
+// }
+
+
 /* ============================================================
    FIN DU SCRIPT
 ============================================================ */
