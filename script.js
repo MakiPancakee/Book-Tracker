@@ -62,25 +62,7 @@
    1. CONFIGURATION
 ============================================================ */
 
-// Au tout début de ton script.js :
-let utilisateurActuel = localStorage.getItem("utilisateurActuel") || "Matide";
-
-// Si tu as un élément select dans ton HTML (par exemple id="select-utilisateur") :
-const selectUtilisateur = document.getElementById("select-utilisateur");
-if (selectUtilisateur) {
-    selectUtilisateur.value = utilisateurActuel; // Met le select sur le bon nom au chargement
-
-    // Quand vous changez d'utilisateur dans le menu déroulant :
-    selectUtilisateur.addEventListener("change", (e) => {
-        utilisateurActuel = e.target.value;
-        localStorage.setItem("utilisateurActuel", utilisateurActuel); // On mémorise le choix
-
-        // On recharge l'affichage pour actualiser les boutons (modifier/coeur) selon qui est connecté
-        if (typeof chargerLivres === "function") {
-            chargerLivres();
-        }
-    });
-}
+let utilisateurActuel = "";
 
 function echapperHTML(texte) {
     if (!texte) return "";
@@ -440,7 +422,6 @@ function initialiser() {
  * lorsque la page est fermée.
  */
 function verifierProfil() {
-
     const utilisateur = localStorage.getItem("utilisateurActif");
 
     const ecranProfil = document.getElementById("ecran-profil");
@@ -451,13 +432,16 @@ function verifierProfil() {
      * on affiche l'écran de choix.
      */
     if (!utilisateur) {
-
         ecranProfil.classList.remove("cache");
         application.classList.add("cache");
-
         return;
     }
 
+    /*
+     * On stocke l'utilisateur dans la variable globale
+     * pour que le reste du script (comme creerCarteLivre) le connaisse.
+     */
+    utilisateurActuel = utilisateur;
 
     /*
      * Profil déjà enregistré :
@@ -466,20 +450,17 @@ function verifierProfil() {
     ecranProfil.classList.add("cache");
     application.classList.remove("cache");
 
-
     /*
      * Message de bienvenue.
      */
     document.getElementById("message-bienvenue").textContent =
         `Connectée en tant que : ${utilisateur}`;
 
-
     /*
      * On charge les livres depuis Google Sheets.
      */
     chargerLivres();
 }
-
 
 /*
  * Enregistre le profil choisi.
