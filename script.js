@@ -72,6 +72,18 @@ function echapperHTML(texte) {
         .replace(/'/g, "&#039;");
 }
 
+function echapperAttribut(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+
+
 /*
  * URL de ton Google Apps Script.
  *
@@ -317,17 +329,24 @@ function convertirLivre(ligne) {
  * true    → true
  * false   → false
  */
-function convertirBooleen(valeur) {
+// function convertirBooleen(valeur) {
 
-    if (valeur === true) {
+//     if (valeur === true) {
+//         return true;
+//     }
+
+//     if (typeof valeur === "string") {
+//         return valeur.toUpperCase() === "VRAI";
+//     }
+
+//     return false;
+// }
+
+function convertirBooleen(valeur) {
+    if (valeur === true || valeur === "Vrai" || valeur === "vrai" || valeur === "TRUE" || valeur === "1") {
         return true;
     }
-
-    if (typeof valeur === "string") {
-        return valeur.toUpperCase() === "VRAI";
-    }
-
-    return false;
+    return false; // Par défaut, si c'est vide ou autre chose, ça renvoie false
 }
 
 
@@ -556,6 +575,22 @@ function formatStatut(statut) {
 /* ============================================================
    8. FILTRES
 ============================================================ */
+
+function basculerCoupDeCoeur(index) {
+    const livre = listeLivres[index];
+
+    // Sécurité : seul le propriétaire peut modifier l'état
+    if (livre.personne !== utilisateurActuel) {
+        alert("Tu ne peux modifier que tes propres fiches !");
+        return;
+    }
+
+    // Inversion de la valeur (true devient false, false devient true)
+    livre.coupDeCoeur = !livre.coupDeCoeur;
+
+    // Relance le rendu et la sauvegarde
+    enregistrerEtRendre(); // Remplace par le nom de ta fonction de mise à jour UI / Google Sheets
+}
 
 function genererEtoiles(note) {
     const maxEtoiles = 5;
@@ -949,6 +984,19 @@ function creerCarteLivre(livre) {
 
     const coeur =
         livre.coupDeCoeur ? "❤️" : "🤍";
+
+    // 1. On vérifie si la personne connectée est bien le propriétaire du livre
+    const estProprietaire = (livre.personne === utilisateurActuel);
+
+    // 2. Bouton Coup de cœur : cliquable uniquement si c'est son livre
+    const boutonCoeurHTML = estProprietaire
+        ? `<button class="btn btn-sm ${livre.coupDeCoeur ? 'btn-danger' : 'btn-outline-danger'}" onclick="basculerCoupDeCoeur(${index})">❤️</button>`
+        : (livre.coupDeCoeur ? `<span class="badge bg-danger">❤️</span>` : '');
+
+    // 3. Bouton Modifier : affiché UNIQUEMENT si c'est son livre
+    const boutonEditerHTML = estProprietaire
+        ? `<button class="btn btn-sm btn-outline-primary btn-editer" onclick="passerEnModeEdition(${index})">✏️ Modifier</button>`
+        : '';
 
 
     /*
@@ -1797,9 +1845,9 @@ function creerFormulaireHTML() {
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Format</label>
                             <select id="nouveau-format" class="form-select">
-                                <option value="Physique">Physique</option>
-                                <option value="E-Book">E-Book</option>
-                                <option value="Audio">Audio</option>
+                                <option value="Physique">📚 Physique</option>
+                                <option value="E-Book">📱 E-Book</option>
+                                <option value="Audio">🎧 Audio</option>
                             </select>
                         </div>
                     </div>
@@ -2803,6 +2851,14 @@ async function toggleCoupDeCoeurPopup(index) {
  * Affiche le formulaire de modification d'un livre.
  */
 function passerEnModeEdition(index) {
+
+    const livre = listeLivres[index];
+
+    // Vérification de sécurité
+    if (livre.proprietaire !== utilisateurActuel) {
+        alert("Tu ne peux modifier que tes propres fiches !");
+        return;
+    }
 
     const livre =
         tousLesLivres[index];
